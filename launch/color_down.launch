@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+	<rosparam ns="beer_test" command="load" file="$(find zeabus_vision_balldetector)/params/color_down1.yaml">
+	</rosparam>
+	<rosparam ns="beer_test" command="load" file="$(find zeabus_vision_balldetector)/params/color_down2.yaml">
+	</rosparam>
+	<rosparam ns="beer_test" command="load" file="$(find zeabus_vision_balldetector)/params/color_down3.yaml">
+	</rosparam>
+	<rosparam ns="beer_test" command="load" file="$(find zeabus_vision_balldetector)/params/color_down4.yaml">
+	</rosparam>
+	<node pkg="zeabus_vision_balldetector" type="beer_test_down.py" name="beer_test_down">
+		<param name="topic_down" value='/leftcam_bottom/image_raw/compressed'/>
+	</node>
+</launch>

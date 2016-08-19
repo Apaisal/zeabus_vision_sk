@@ -1,0 +1,12 @@
+color_down:
+ upper_yellow: [39, 255, 255]
+
+ lower_yellow: [0, 0, 225]
+
+ upper_orange1: [42, 255, 255]
+
+ lower_orange1: [0, 0, 130]
+
+ upper_orange2: [80, 255, 255]
+
+ lower_orange2: [0, 0, 0]

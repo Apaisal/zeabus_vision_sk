@@ -1,0 +1,8 @@
+color_top:
+ upper_yellow: [87, 196, 255]
+
+ lower_yellow: [0, 0, 56]
+
+ upper_orange: [180, 255, 255]
+
+ lower_orange: [156, 0, 0]
