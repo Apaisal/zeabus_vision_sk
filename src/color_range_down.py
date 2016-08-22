@@ -20,18 +20,21 @@ def draw_circle(event,x,y,flags,param):
 def create_trackbar():
 	width = 1366
 	height = 768
+	
 	cv2.namedWindow('image',flags=cv2.WINDOW_NORMAL)
 	cv2.namedWindow('mask',flags=cv2.WINDOW_NORMAL)
-	cv2.namedWindow('orange1',flags=cv2.WINDOW_NORMAL)
+	cv2.namedWindow('red',flags=cv2.WINDOW_NORMAL)
+	cv2.namedWindow('white',flags=cv2.WINDOW_NORMAL)
+	cv2.namedWindow('orange',flags=cv2.WINDOW_NORMAL)
 	cv2.namedWindow('yellow',flags=cv2.WINDOW_NORMAL)
-	#cv2.namedWindow('orange2',flags=cv2.WINDOW_NORMAL)
-
-	cv2.moveWindow('image',0,(height*2/3)+100)
+	
+	cv2.moveWindow('image',0,0)
 	cv2.moveWindow('mask',width/2,0)
-	cv2.moveWindow('orange1',width/2,(height/3)+50)
-	cv2.moveWindow('yellow',width/2,(height*2/3)+50)
-	#cv2.moveWindow('orange2',width/2,(height*2/3)+50)
-
+	cv2.moveWindow('red',width/2,(height*2/3)+60)
+	cv2.moveWindow('white',width,0)
+	cv2.moveWindow('orange',width,(height*2/3)+60)
+	cv2.moveWindow('yellow',width*2,(height*2/3)+60)
+	
 	cv2.resizeWindow('image',(width/2)-100,height)
 
 	cv2.createTrackbar('Hmin','image',0,180,nothing)
@@ -53,9 +56,7 @@ def select_color():
 	global ix,iy,t,img,wait
 
 	x = Finding_Color()
-
 	main_color = x.color
-
 	create_trackbar()
 
 	h,s,v = 0,0,0
@@ -71,6 +72,7 @@ def select_color():
 	Hmin_re = []
 	Smin_re = []
 	Vmin_re = []
+
 	while(img is None):
 		rospy.sleep(0.01)
 	
@@ -124,20 +126,24 @@ def select_color():
 
 		lower = np.array(main_color.lower_main,np.uint8)
 		upper = np.array(main_color.upper_main,np.uint8) 
-
-		lower_orange1 = np.array(main_color.lower_orange1,np.uint8)
-		upper_orange1 = np.array(main_color.upper_orange1,np.uint8)
-
-		lower_orange2 = np.array(main_color.lower_orange2,np.uint8)
-		upper_orange2 = np.array(main_color.upper_orange2,np.uint8)
+		
+		lower_orange = np.array(main_color.lower_orange,np.uint8)
+		upper_orange = np.array(main_color.upper_orange,np.uint8)
 
 		lower_yellow = np.array(main_color.lower_yellow,np.uint8)
 		upper_yellow = np.array(main_color.upper_yellow,np.uint8)
 
+		lower_red = np.array(main_color.lower_red,np.uint8)
+		upper_red = np.array(main_color.upper_red,np.uint8)
+
+		lower_white = np.array(main_color.lower_white,np.uint8)
+		upper_white = np.array(main_color.upper_white,np.uint8)
+
 		mask = cv2.inRange(hsv,lower, upper)
-		mask_orange2 = cv2.inRange(hsv,lower_orange2, upper_orange2)
-		mask_orange1 = cv2.inRange(hsv,lower_orange1, upper_orange1)
+		mask_orange = cv2.inRange(hsv,lower_orange, upper_orange)
 		mask_yellow = cv2.inRange(hsv,lower_yellow, upper_yellow)
+		mask_red = cv2.inRange(hsv,lower_red, upper_red)
+		mask_white = cv2.inRange(hsv,lower_white, upper_white)
 
 		if k == 27:
 			break
@@ -201,9 +207,10 @@ def select_color():
 				main_color.lower_yellow = [ Hmin[-1] , Smin[-1] , Vmin[-1] ]
 				main_color.upper_yellow = [ Hmax[-1] , Smax[-1] , Vmax[-1] ]
 
-				main_color.check_orange2 = False
-				main_color.check_orange1 = False
+				main_color.check_orange = False
 				main_color.check_yellow = False
+				main_color.check_white = False
+				main_color.check_red = False
 
 			elif not main_color.check_yellow:
 				main_color.lower_main = main_color.lower_yellow[:]
@@ -225,31 +232,33 @@ def select_color():
 				cv2.setTrackbarPos('Smax', 'image', Smax[-1])
 				cv2.setTrackbarPos('Vmax', 'image', Vmax[-1])
 
-				main_color.check_orange1 = False
-				main_color.check_orange2 = False
+				main_color.check_orange = False
 				main_color.check_yellow = True
+				main_color.check_white = False
+				main_color.check_red = False
 
 		elif k == ord("o") and t != 1:
-			if main_color.check_orange1:
-				main_color.lower_orange1 = [ Hmin[-1] , Smin[-1] , Vmin[-1] ]
-				main_color.upper_orange1 = [ Hmax[-1] , Smax[-1] , Vmax[-1] ]
+			if main_color.check_orange:
+				main_color.lower_orange = [ Hmin[-1] , Smin[-1] , Vmin[-1] ]
+				main_color.upper_orange = [ Hmax[-1] , Smax[-1] , Vmax[-1] ]
 
-				main_color.check_orange1 = False
-				main_color.check_orange2 = False
+				main_color.check_orange = False
 				main_color.check_yellow = False
+				main_color.check_white = False
+				main_color.check_red = False
 
-			elif not main_color.check_orange1:
-				main_color.lower_main = main_color.lower_orange1[:]
-				main_color.upper_main = main_color.upper_orange1[:]
+			elif not main_color.check_orange:
+				main_color.lower_main = main_color.lower_orange[:]
+				main_color.upper_main = main_color.upper_orange[:]
 
 
-				Hmin.append(main_color.lower_orange1[0])
-				Smin.append(main_color.lower_orange1[1])
-				Vmin.append(main_color.lower_orange1[2])
+				Hmin.append(main_color.lower_orange[0])
+				Smin.append(main_color.lower_orange[1])
+				Vmin.append(main_color.lower_orange[2])
 
-				Hmax.append(main_color.upper_orange1[0])
-				Smax.append(main_color.upper_orange1[1])
-				Vmax.append(main_color.upper_orange1[2])
+				Hmax.append(main_color.upper_orange[0])
+				Smax.append(main_color.upper_orange[1])
+				Vmax.append(main_color.upper_orange[2])
 
 				cv2.setTrackbarPos('Hmin', 'image', Hmin[-1])
 				cv2.setTrackbarPos('Smin', 'image', Smin[-1])
@@ -258,10 +267,80 @@ def select_color():
 				cv2.setTrackbarPos('Smax', 'image', Smax[-1])
 				cv2.setTrackbarPos('Vmax', 'image', Vmax[-1])
 
-				main_color.check_orange1 = True
-				main_color.check_orange2 = False
+				main_color.check_orange = True
 				main_color.check_yellow = False
+				main_color.check_white = False
+				main_color.check_red = False
+		
+		elif k == ord("r") and t != 1:
+			if main_color.check_red:
+				main_color.lower_red = [ Hmin[-1] , Smin[-1] , Vmin[-1] ]
+				main_color.upper_red = [ Hmax[-1] , Smax[-1] , Vmax[-1] ]
 
+				main_color.check_orange = False
+				main_color.check_yellow = False
+				main_color.check_white = False
+				main_color.check_red = False
+
+			elif not main_color.check_red:
+				main_color.lower_main = main_color.lower_red[:]
+				main_color.upper_main = main_color.upper_red[:]
+
+
+				Hmin.append(main_color.lower_red[0])
+				Smin.append(main_color.lower_red[1])
+				Vmin.append(main_color.lower_red[2])
+
+				Hmax.append(main_color.upper_red[0])
+				Smax.append(main_color.upper_red[1])
+				Vmax.append(main_color.upper_red[2])
+
+				cv2.setTrackbarPos('Hmin', 'image', Hmin[-1])
+				cv2.setTrackbarPos('Smin', 'image', Smin[-1])
+				cv2.setTrackbarPos('Vmin', 'image', Vmin[-1])
+				cv2.setTrackbarPos('Hmax', 'image', Hmax[-1])
+				cv2.setTrackbarPos('Smax', 'image', Smax[-1])
+				cv2.setTrackbarPos('Vmax', 'image', Vmax[-1])
+
+				main_color.check_orange = False
+				main_color.check_yellow = False
+				main_color.check_white = False
+				main_color.check_red = True
+		
+		elif k == ord("w") and t != 1:
+			if main_color.check_white:
+				main_color.lower_white = [ Hmin[-1] , Smin[-1] , Vmin[-1] ]
+				main_color.upper_white = [ Hmax[-1] , Smax[-1] , Vmax[-1] ]
+
+				main_color.check_orange = False
+				main_color.check_yellow = False
+				main_color.check_white = False
+				main_color.check_red = False
+
+			elif not main_color.check_white:
+				main_color.lower_main = main_color.lower_white[:]
+				main_color.upper_main = main_color.upper_white[:]
+
+
+				Hmin.append(main_color.lower_white[0])
+				Smin.append(main_color.lower_white[1])
+				Vmin.append(main_color.lower_white[2])
+
+				Hmax.append(main_color.upper_white[0])
+				Smax.append(main_color.upper_white[1])
+				Vmax.append(main_color.upper_white[2])
+
+				cv2.setTrackbarPos('Hmin', 'image', Hmin[-1])
+				cv2.setTrackbarPos('Smin', 'image', Smin[-1])
+				cv2.setTrackbarPos('Vmin', 'image', Vmin[-1])
+				cv2.setTrackbarPos('Hmax', 'image', Hmax[-1])
+				cv2.setTrackbarPos('Smax', 'image', Smax[-1])
+				cv2.setTrackbarPos('Vmax', 'image', Vmax[-1])
+
+				main_color.check_orange = False
+				main_color.check_yellow = False
+				main_color.check_white = True
+				main_color.check_red = False
 		
 
 		elif k == ord("s") and t != 1:
@@ -269,16 +348,17 @@ def select_color():
 		t=0
 		cv2.imshow('image',hsv)
 		cv2.imshow('mask',mask)
-		#cv2.imshow('orange2',mask_orange2)
-		cv2.imshow('orange1',mask_orange1)
+		cv2.imshow('orange',mask_orange)
 		cv2.imshow('yellow',mask_yellow)
+		cv2.imshow('red',mask_red)
+		cv2.imshow('white',mask_white)
 
 	cv2.destroyAllWindows()
 
 
 def callback(msg):
 	global img,wait
-	# print msg
+
 	if wait == False:
 		arr = np.fromstring(msg.data,np.uint8)
 		img = cv2.imdecode(arr,1)
@@ -286,16 +366,24 @@ def callback(msg):
 
 class Color:
 	def __init__(self):
-		self.check_orange2 = False
-		self.check_orange1 = False
+		self.check_orange = False
 		self.check_yellow = False
+		self.check_red = False
+		self.check_white = False
 		self.name = 'color_down'
-		self.upper_orange2 = rospy.get_param("color_range/color_down/upper_orange2",[0,0,0])
-		self.lower_orange2 = rospy.get_param("color_range/color_down/lower_orange2",[180,255,255])
-		self.upper_orange1 = rospy.get_param("color_range/color_down/upper_orange1",[0,0,0])
-		self.lower_orange1 = rospy.get_param("color_range/color_down/lower_orange1",[180,255,255])
+		
+		self.upper_orange = rospy.get_param("color_range/color_down/upper_orange",[0,0,0])
+		self.lower_orange = rospy.get_param("color_range/color_down/lower_orange",[180,255,255])
+		
 		self.upper_yellow = rospy.get_param("color_range/color_down/upper_yellow",[0,0,0])
 		self.lower_yellow = rospy.get_param("color_range/color_down/lower_yellow",[180,255,255])
+		
+		self.upper_red = rospy.get_param("color_range/color_down/upper_red",[0,0,0])
+		self.lower_red = rospy.get_param("color_range/color_down/lower_red",[180,255,255])
+		
+		self.upper_white = rospy.get_param("color_range/color_down/upper_white",[0,0,0])
+		self.lower_white = rospy.get_param("color_range/color_down/lower_white",[180,255,255])
+		
 		self.lower_main = [0,0,0]
 		self.upper_main = [180,255,255]
 
@@ -311,14 +399,17 @@ class Finding_Color:
 		f.close()
 		try :
 			for i in range (0,3):
-				rospy.set_param('/color_range/color_down/lower_orange1',self.color.lower_orange1)
-				rospy.set_param('/color_range/color_down/upper_orange1',self.color.upper_orange1)
+				rospy.set_param('/color_range/color_down/lower_orange',self.color.lower_orange)
+				rospy.set_param('/color_range/color_down/upper_orange',self.color.upper_orange)
 		
-				rospy.set_param('/color_range/color_down/lower_orange2',self.color.lower_orange2)
-				rospy.set_param('/color_range/color_down/upper_orange2',self.color.upper_orange2)
-				
 				rospy.set_param('/color_range/color_down/lower_yellow',self.color.lower_yellow)
 				rospy.set_param('/color_range/color_down/upper_yellow',self.color.upper_yellow)
+
+				rospy.set_param('/color_range/color_down/lower_red',self.color.lower_red)
+				rospy.set_param('/color_range/color_down/upper_red',self.color.upper_red)
+
+				rospy.set_param('/color_range/color_down/lower_white',self.color.lower_white)
+				rospy.set_param('/color_range/color_down/upper_white',self.color.upper_white)
 				
 			print 'save'	
 		except Exception:
@@ -329,12 +420,13 @@ class Finding_Color:
 		tmp = ''.join([obj.name + ":\n" ,
 				" " + "upper_yellow: " + str(list(obj.upper_yellow)) + "\n\n" ,
 				" " + "lower_yellow: " + str(list(obj.lower_yellow)) + "\n\n" ,
-				" " + "upper_orange1: " + str(list(obj.upper_orange1)) + "\n\n" ,
-				" " + "lower_orange1: " + str(list(obj.lower_orange1)) + "\n\n" ,
-				" " + "upper_orange2: " + str(list(obj.upper_orange2)) + "\n\n" ,
-				" " + "lower_orange2: " + str(list(obj.lower_orange2)) ])
+				" " + "upper_orange: " + str(list(obj.upper_orange)) + "\n\n" ,
+				" " + "lower_orange: " + str(list(obj.lower_orange)) + "\n\n" ,
+				" " + "upper_red: " + str(list(obj.upper_red)) + "\n\n" ,
+				" " + "lower_red: " + str(list(obj.lower_red)) + "\n\n" ,
+				" " + "upper_white: " + str(list(obj.upper_white)) + "\n\n" ,
+				" " + "lower_white: " + str(list(obj.lower_white)) ])
 		return tmp
-
 
 if __name__ == '__main__':
 	rospy.init_node('color_range_down')
