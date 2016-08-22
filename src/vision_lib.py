@@ -9,20 +9,16 @@ def getColor(color):
 	if color == "yellow":
 		lower = np.array(rospy.get_param('/color_range/color_top/lower_yellow'),np.uint8)
 		upper = np.array(rospy.get_param('/color_range/color_top/upper_yellow'),np.uint8)
-	# gate
+		# path
 	elif color == 'orange':
-		lower = np.array(rospy.get_param('/color_range/color_top/lower_orange'),np.uint8)
- 		upper = np.array(rospy.get_param('/color_range/color_top/upper_orange'),np.uint8)
-	# path
-	elif color == 'orange1':
-		lower = np.array(rospy.get_param('/color_range/color_down/lower_orange1'),np.uint8)
-		upper = np.array(rospy.get_param('/color_range/color_down/upper_orange1'),np.uint8)
-	elif color == 'orange2':
-		lower = np.array(rospy.get_param('/color_range/color_down/lower_orange2'),np.uint8)
-		upper = np.array(rospy.get_param('/color_range/color_down/upper_orange2'),np.uint8)
-	elif color == 'yellow1':
-		lower = np.array(rospy.get_param('/color_range/color_down/lower_yellow'),np.uint8)
-		upper = np.array(rospy.get_param('/color_range/color_down/upper_yellow'),np.uint8)
+		lower = np.array(rospy.get_param('/color_range/color_down/lower_orange'),np.uint8)
+		upper = np.array(rospy.get_param('/color_range/color_down/upper_orange'),np.uint8)
+	elif color == 'red':
+		lower = np.array(rospy.get_param('/color_range/color_down/lower_red'),np.uint8)
+		upper = np.array(rospy.get_param('/color_range/color_down/upper_red'),np.uint8)
+	elif color == 'white':
+		lower = np.array(rospy.get_param('/color_range/color_down/lower_white'),np.uint8)
+		upper = np.array(rospy.get_param('/color_range/color_down/upper_white'),np.uint8)
 	# print lower,upper
 	return lower,upper
 
