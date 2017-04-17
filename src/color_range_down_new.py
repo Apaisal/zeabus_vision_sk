@@ -202,7 +202,7 @@ def select_color():
         name, status = has_color(window_name, key)
 
         if click:
-            h, s, v = hsv[pixel['x'], pixel['y']]
+            h, s, v = hsv[pixel['y'],pixel['x']]
             ([hl, sl, vl], [hu, su, vu]) = w.get_range('mask')
             lower_current = [min(h, hl), min(s, sl), min(s, sl)]
             upper_current = [max(h, hu), max(s, su), max(s, su)]
