@@ -203,7 +203,7 @@ def select_color():
 
         if click:
             h, s, v = hsv[pixel['x'], pixel['y']]
-            [hl, sl, vl], [hu, su, vu] = w.get_range('mask')
+            ([hl, sl, vl], [hu, su, vu]) = w.get_range('mask')
             lower_current = [min(h, hl), min(s, sl), min(s, sl)]
             upper_current = [max(h, hu), max(s, su), max(s, su)]
 
