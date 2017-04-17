@@ -7,9 +7,12 @@ from sensor_msgs.msg import CompressedImage
 
 from vision_lib import *
 
+global pixel, click, img, wait, hsv
+pixel = {}
 pixel['x'], pixel['y'] = -1, -1
 click = False
 img = None
+hsv = None
 wait = False
 
 
@@ -107,7 +110,8 @@ class window:
 
     def show_image(self, name):
         global hsv
-        result = cv2.inRange(hsv, self.lower[name][-1], self.upper[name][-1])
+        result = cv2.inRange(hsv, np.array(self.lower[name][-1], np.uint8),
+                             np.array(self.upper[name][-1], np.uint8))
         cv2.imshow(name, result)
 
     def save(self):
@@ -142,11 +146,11 @@ def has_color(window_name, k):
     for name in window_name:
         if k == ord(name[0]):
             return name, True
-    return _, False
+    return None, False
 
 
 def set_trackbar(lower, upper):
-    [hmin, smin, vmin], [hmax, smax, vmax] = lower + upper
+    [hmin, smin, vmin], [hmax, smax, vmax] = lower, upper
     cv2.setTrackbarPos('Hmin', 'image', hmin)
     cv2.setTrackbarPos('Smin', 'image', smin)
     cv2.setTrackbarPos('Vmin', 'image', vmin)
@@ -156,7 +160,7 @@ def set_trackbar(lower, upper):
 
 
 def select_color():
-    global pixel, t, img, wait, hsv
+    global pixel, t, img, wait, hsv, click
 
     window_name = ['mask', 'red', 'orange', 'white', 'yellow']
 
@@ -165,7 +169,7 @@ def select_color():
 
     w = window()
 
-    cv2.namedWindosw('image', flags=cv2.WINDOW_NORMAL)
+    cv2.namedWindow('image', flags=cv2.WINDOW_NORMAL)
     cv2.moveWindow('image', 0, 0)
     cv2.resizeWindow('image', (width / 3), height)
 
@@ -184,6 +188,8 @@ def select_color():
     cv2.setTrackbarPos('m <-> c', 'image', 1)
 
     cv2.setMouseCallback('image', draw_circle)
+    while(img is None):
+        rospy.sleep(0.01)
 
     while not rospy.is_shutdown():
 
@@ -224,8 +230,16 @@ def select_color():
             w.undo_range('mask')
         elif key == ord('s'):
             w.save()
+        elif key == ord('q'):
+            break
         
-     
+        for name in window_name:
+            w.show_image(name)
+        cv2.imshow('image',img)
+        
+        click = False
+
+    cv2.destroyAllWindows()
 
 if __name__ == '__main__':
     rospy.init_node('color_range_down')
