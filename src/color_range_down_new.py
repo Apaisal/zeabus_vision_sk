@@ -213,8 +213,7 @@ def select_color():
 
         elif status:
             if w.select[name]:
-                lower_current = [Hmin[-1], Smin[-1], Vmin[-1]]
-                upper_current = [Hmax[-1], Smax[-1], Vmax[-1]]
+                lower_current, upper_current = w.get_param(name)
                 w.push_range(name, lower_current, upper_current)
             else:
                 lower_current, upper_current = w.get_param(name)
