@@ -64,10 +64,6 @@ class window:
             self.y = 0
 
     def create_range(self, name):
-        self.param_lower = rospy.get_param(
-            "color_range/down/lower_" + name, [180, 255, 255])
-        self.param_upper = rospy.get_param(
-            "color_range/down/upper_" + name, [0, 0, 0])
         self.lower[name] = [[180, 255, 255]]
         self.upper[name] = [[0, 0, 0]]
         self.lower_tmp[name] = []
@@ -120,9 +116,9 @@ class window:
             for i in range(0, 3):
                 for name in self.lower:
                     rospy.set_param(
-                        '/color_range/color_down/lower_orange', self.lower[name][-1])
+                        '/color_range/down/lower_'+name, self.lower[name][-1])
                     rospy.set_param(
-                        '/color_range/color_down/upper_orange', self.upper[name][-1])
+                        '/color_range/down/upper_'+name, self.upper[name][-1])
 
                 f = open(self.path + "/params/color_down.yaml", "w")
                 x = self.genyaml()
@@ -216,14 +212,12 @@ def select_color():
             wait = False
 
         name, status = has_color(window_name, key)
-        # print('status : {0} click : {1} name : {2}'.format(
-        #     status, click, name))
-        (lower, upper) = w.get_range('mask')
-        (lower_bar, upper_bar) = get_trackbar()
+
+        lower, upper = w.get_range('mask')
+        lower_bar, upper_bar = get_trackbar()
         if click:
             h, s, v = hsv[pixel['y'], pixel['x']]
-            print(h,s,v)
-            ([hl, sl, vl], [hu, su, vu]) = w.get_range('mask')
+            [hl, sl, vl], [hu, su, vu] = w.get_range('mask')
             lower_current = [min(h, hl), min(s, sl), min(v, vl)]
             upper_current = [max(h, hu), max(s, su), max(v, vu)]
             w.push_range('mask', lower_current, upper_current)
@@ -235,10 +229,12 @@ def select_color():
             if w.select[name]:
                 lower_current, upper_current = w.get_param('mask')
                 w.push_range(name, lower_current, upper_current)
+                cv2.setTrackbarPos('m <-> c', 'image', 2)
             else:
                 lower_current, upper_current = w.get_param(name)
                 w.push_range('mask', lower_current, upper_current)
                 set_trackbar(lower_current, upper_current)
+                cv2.setTrackbarPos('m <-> c', 'image', 0)
 
             w.select[name] = not w.select[name]
         #  <-
