@@ -82,10 +82,10 @@ class window:
         return self.param_lower, self.param_upper
 
     def push_range(self, name, lower, upper):
-        self.lower[name].append([lower])
-        self.upper[name].append([upper])
+        self.lower[name].append(lower)
+        self.upper[name].append(upper)
 
-    def get_range(self, name):
+    def get_range(self, name):      
         return self.lower[name][-1], self.upper[name][-1]
 
     def undo_range(self, name):
@@ -213,7 +213,7 @@ def select_color():
 
         elif status:
             if w.select[name]:
-                lower_current, upper_current = w.get_param(name)
+                lower_current, upper_current = w.get_param('mask')
                 w.push_range(name, lower_current, upper_current)
             else:
                 lower_current, upper_current = w.get_param(name)
