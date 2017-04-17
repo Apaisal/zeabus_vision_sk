@@ -61,12 +61,22 @@ class window:
             self.y = 0
 
     def create_range(self, name):
-        param_lower = rosypy.
+        self.param_lower = rospy.get_param(
+            "color_range/down/lower_" + name, [180, 255, 255])
+        self.param_upper = rospy.get_param(
+            "color_range/down/upper_" + name, [0, 0, 0])
         self.lower[name] = [[0, 0, 0]]
         self.upper[name] = [[180, 255, 255]]
         self.lower_tmp[name] = []
         self.upper_tmp[name] = []
         self.select[name] = False
+
+    def get_param(self, name):
+        self.param_lower = rospy.get_param(
+            "color_range/down/lower_" + name, [180, 255, 255])
+        self.param_upper = rospy.get_param(
+            "color_range/down/upper_" + name, [0, 0, 0])
+        return self.param_lower, self.param_upper
 
     def push_range(self, name, lower, upper):
         self.lower[name].append[lower]
@@ -201,11 +211,21 @@ def select_color():
                 upper_current = [Hmax[-1], Smax[-1], Vmax[-1]]
                 w.push_range(name, lower_current, upper_current)
             else:
-                lower_current, upper_current = w.get_range(name)
+                lower_current, upper_current = w.get_param(name)
                 w.push_range('mask', lower_current, upper_current)
                 set_trackbar(lower_current, upper_current)
-                
+
             w.select[name] = not w.select[name]
+        #  <-
+        elif key == 85:
+            w.redo_range('mask')
+        # ->
+        elif key == 86:
+            w.undo_range('mask')
+        elif key == ord('s'):
+            w.save()
+        
+     
 
 if __name__ == '__main__':
     rospy.init_node('color_range_down')
