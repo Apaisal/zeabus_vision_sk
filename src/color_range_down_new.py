@@ -72,9 +72,9 @@ class window:
 
     def get_param(self, name):
         self.param_lower = rospy.get_param(
-            "color_range/down/lower_" + name, [180, 255, 255])
+            "color_range/color_down/lower_" + name, [180, 255, 255])
         self.param_upper = rospy.get_param(
-            "color_range/down/upper_" + name, [0, 0, 0])
+            "color_range/color_down/upper_" + name, [0, 0, 0])
         return self.param_lower, self.param_upper
 
     def push_range(self, name, lower, upper):
@@ -116,9 +116,9 @@ class window:
             for i in range(0, 3):
                 for name in self.lower:
                     rospy.set_param(
-                        '/color_range/down/lower_'+name, self.lower[name][-1])
+                        '/color_range/color_down/lower_'+name, self.lower[name][-1])
                     rospy.set_param(
-                        '/color_range/down/upper_'+name, self.upper[name][-1])
+                        '/color_range/color_down/upper_'+name, self.upper[name][-1])
 
                 f = open(self.path + "/params/color_down.yaml", "w")
                 x = self.genyaml()
@@ -129,7 +129,7 @@ class window:
             print 'not save'
 
     def genyaml(self):
-        tmp = " color_down:\n"
+        tmp = "color_down:\n"
         for name in self.lower:
             tmp += " " + "upper_" + name + ": " + str(self.upper[name][-1]) + "\n\n" +\
                 " " + "lower_" + name + ": " + \
@@ -227,7 +227,7 @@ def select_color():
             w.push_range('mask', lower_bar, upper_bar)
         elif status:
             if w.select[name]:
-                lower_current, upper_current = w.get_param('mask')
+                lower_current, upper_current = w.get_range('mask')
                 w.push_range(name, lower_current, upper_current)
                 cv2.setTrackbarPos('m <-> c', 'image', 2)
             else:
