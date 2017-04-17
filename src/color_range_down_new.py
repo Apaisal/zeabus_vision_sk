@@ -85,7 +85,7 @@ class window:
         self.lower[name].append(lower)
         self.upper[name].append(upper)
 
-    def get_range(self, name):      
+    def get_range(self, name):
         return self.lower[name][-1], self.upper[name][-1]
 
     def undo_range(self, name):
@@ -159,6 +159,22 @@ def set_trackbar(lower, upper):
     cv2.setTrackbarPos('Vmax', 'image', vmax)
 
 
+def get_trackbar():
+    Hmin = cv2.getTrackbarPos('Hmin', 'image')
+    Smin = cv2.getTrackbarPos('Smin', 'image')
+    Vmin = cv2.getTrackbarPos('Vmin', 'image')
+    Hmax = cv2.getTrackbarPos('Hmax', 'image')
+    Smax = cv2.getTrackbarPos('Smax', 'image')
+    Vmax = cv2.getTrackbarPos('Vmax', 'image')
+    lower = [Hmin, Smin, Vmin]
+    upper = [Hmax, Smax, Vmax]
+    return lower, upper
+
+
+def compare_range(l, u, l1, u1):
+    return not (l == l1 and u == u1)
+
+
 def select_color():
     global pixel, t, img, wait, hsv, click
 
@@ -200,17 +216,20 @@ def select_color():
             wait = False
 
         name, status = has_color(window_name, key)
-
+        print('status : {0} click : {1} name : {2}'.format(
+            status, click, name))
+        (lower, upper) = w.get_range('mask')
+        (lower_bar, upper_bar) = get_trackbar()
         if click:
-            h, s, v = hsv[pixel['y'],pixel['x']]
+            h, s, v = hsv[pixel['y'], pixel['x']]
             ([hl, sl, vl], [hu, su, vu]) = w.get_range('mask')
             lower_current = [min(h, hl), min(s, sl), min(s, sl)]
             upper_current = [max(h, hu), max(s, su), max(s, su)]
-
             w.push_range('mask', lower_current, upper_current)
-
             set_trackbar(lower_current, upper_current)
 
+        elif compare_range(lower, upper, lower_bar, upper_bar):
+            w.push_range('mask', lower_bar, upper_bar)
         elif status:
             if w.select[name]:
                 lower_current, upper_current = w.get_param('mask')
@@ -234,7 +253,7 @@ def select_color():
 
         for name in window_name:
             w.show_image(name)
-        cv2.imshow('image', hsv)    
+        cv2.imshow('image', hsv)
 
         click = False
         status = False
