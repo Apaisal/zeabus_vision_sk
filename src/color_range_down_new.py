@@ -68,8 +68,8 @@ class window:
             "color_range/down/lower_" + name, [180, 255, 255])
         self.param_upper = rospy.get_param(
             "color_range/down/upper_" + name, [0, 0, 0])
-        self.lower[name] = [[0, 0, 0]]
-        self.upper[name] = [[180, 255, 255]]
+        self.lower[name] = [[180, 255, 255]]
+        self.upper[name] = [[0, 0, 0]]
         self.lower_tmp[name] = []
         self.upper_tmp[name] = []
         self.select[name] = False
