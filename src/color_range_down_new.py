@@ -234,10 +234,10 @@ def select_color():
 
         for name in window_name:
             w.show_image(name)
-        cv2.imshow('image', img)
+        cv2.imshow('image', hsv)    
 
         click = False
-
+        status = False
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
