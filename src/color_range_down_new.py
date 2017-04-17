@@ -82,8 +82,8 @@ class window:
         return self.param_lower, self.param_upper
 
     def push_range(self, name, lower, upper):
-        self.lower[name].append[lower]
-        self.upper[name].append[upper]
+        self.lower[name].append([lower])
+        self.upper[name].append([upper])
 
     def get_range(self, name):
         return self.lower[name][-1], self.upper[name][-1]
@@ -232,11 +232,11 @@ def select_color():
             w.save()
         elif key == ord('q'):
             break
-        
+
         for name in window_name:
             w.show_image(name)
-        cv2.imshow('image',img)
-        
+        cv2.imshow('image', img)
+
         click = False
 
     cv2.destroyAllWindows()
