@@ -176,7 +176,7 @@ def compare_range(l, u, l1, u1):
 
 
 def select_color():
-    global pixel, t, img, wait, hsv, click
+    global pixel, img, wait, hsv, click
 
     window_name = ['mask', 'red', 'orange', 'white', 'yellow']
 
@@ -216,15 +216,16 @@ def select_color():
             wait = False
 
         name, status = has_color(window_name, key)
-        print('status : {0} click : {1} name : {2}'.format(
-            status, click, name))
+        # print('status : {0} click : {1} name : {2}'.format(
+        #     status, click, name))
         (lower, upper) = w.get_range('mask')
         (lower_bar, upper_bar) = get_trackbar()
         if click:
             h, s, v = hsv[pixel['y'], pixel['x']]
+            print(h,s,v)
             ([hl, sl, vl], [hu, su, vu]) = w.get_range('mask')
-            lower_current = [min(h, hl), min(s, sl), min(s, sl)]
-            upper_current = [max(h, hu), max(s, su), max(s, su)]
+            lower_current = [min(h, hl), min(s, sl), min(v, vl)]
+            upper_current = [max(h, hu), max(s, su), max(v, vu)]
             w.push_range('mask', lower_current, upper_current)
             set_trackbar(lower_current, upper_current)
 
