@@ -40,9 +40,7 @@ class window:
             self.create_range(name)
 
     def update_position(self):
-
         self.y += self.size
-
         if self.y + self.size >= self.height:
             self.x += self.size
             self.y = 0
@@ -53,15 +51,6 @@ class window:
         self.lower_tmp[name] = []
         self.upper_tmp[name] = []
         self.select[name] = False
-
-    def range_str2list(self, str):
-        str = str.split(',')
-        return [int(str[0]), int(str[1]), int(str[2])]
-
-    def range_list2str(self, list):
-        seq = (str(list[0]), str(list[1]), str(list[2]))
-        ch_join = ','
-        return ch_join.join(seq)
 
     def push_range(self, name, lower, upper):
         self.lower[name].append(lower)
@@ -98,6 +87,15 @@ class window:
             result = cv2.inRange(hsv, np.array(self.lower[name][-1], np.uint8),
                                  np.array(self.upper[name][-1], np.uint8))
             cv2.imshow(name, result)
+
+    def range_str2list(self, str):
+        str = str.split(',')
+        return [int(str[0]), int(str[1]), int(str[2])]
+
+    def range_list2str(self, list):
+        seq = (str(list[0]), str(list[1]), str(list[2]))
+        ch_join = ','
+        return ch_join.join(seq)
 
     def get_param(self, name):
         self.param_lower = rospy.get_param(
@@ -228,7 +226,7 @@ def select_color():
 
         lower, upper = w.get_range('mask')
         lower_bar, upper_bar = get_trackbar()
-        
+
         if click and can_clicks:
             h, s, v = hsv[pixel['y'], pixel['x']]
             [hl, sl, vl], [hu, su, vu] = w.get_range('mask')
