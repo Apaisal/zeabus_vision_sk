@@ -101,6 +101,7 @@ class window:
             self.upper_tmp[name].append(self.upper[name][-1])
             self.lower[name].pop()
             self.upper[name].pop()
+            set_trackbar(self.lower[name][-1], self.upper[name][-1])
             print('undo')
         else:
             print('cannot undo')
@@ -111,6 +112,7 @@ class window:
             self.upper[name].append(self.upper_tmp[name][-1])
             self.lower_tmp[name].pop()
             self.upper_tmp[name].pop()
+            set_trackbar(self.lower[name][-1], self.upper[name][-1])
             print('redo')
         else:
             print('cannot redo')
@@ -248,11 +250,11 @@ def select_color():
 
             w.select[name] = not w.select[name]
         #  <-
-        elif key == 85:
-            w.redo_range('mask')
-        # ->
-        elif key == 86:
+        elif key == ord(','):
             w.undo_range('mask')
+        # ->
+        elif key == ord('.'):
+            w.redo_range('mask')
         elif key == ord('s'):
             w.save()
         elif key == ord('q'):
