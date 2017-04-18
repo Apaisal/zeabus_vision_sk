@@ -7,30 +7,13 @@ from sensor_msgs.msg import CompressedImage
 
 from vision_lib import *
 
-global pixel, click, img, wait, hsv
 pixel = {}
 pixel['x'], pixel['y'] = -1, -1
 click = False
+can_click = False
 img = None
 hsv = None
 wait = False
-
-
-def callback(msg):
-    global img, wait, hsv
-
-    if wait == False:
-        arr = np.fromstring(msg.data, np.uint8)
-        img = cv2.imdecode(arr, 1)
-        img = cv2.resize(img, (320, 256))
-        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
-
-def draw_circle(event, x, y, flags, param):
-    global pixel, click
-    if event == cv2.EVENT_LBUTTONDOWN:
-        click = True
-        pixel['x'], pixel['y'] = x, y
 
 
 class window:
@@ -48,12 +31,13 @@ class window:
         self.select = {}
         self.path = rospkg.RosPack().get_path('zeabus_vision_sk')
 
-    def create(self, name):
-        cv2.namedWindow(name, flags=cv2.WINDOW_NORMAL)
-        cv2.moveWindow(name, self.x + self.x / 5, self.y + self.y / 5)
-        cv2.resizeWindow(name, self.size, self.size)
-        self.update_position()
-        self.create_range(name)
+    def create(self, window_name):
+        for name in window_name:
+            cv2.namedWindow(name, flags=cv2.WINDOW_NORMAL)
+            cv2.moveWindow(name, self.x + self.x / 5, self.y + self.y / 5)
+            cv2.resizeWindow(name, self.size, self.size)
+            self.update_position()
+            self.create_range(name)
 
     def update_position(self):
 
@@ -78,15 +62,6 @@ class window:
         seq = (str(list[0]), str(list[1]), str(list[2]))
         ch_join = ','
         return ch_join.join(seq)
-
-    def get_param(self, name):
-        self.param_lower = rospy.get_param(
-            "color_range/color_down/lower_" + name, '180,255,255')
-        self.param_upper = rospy.get_param(
-            "color_range/color_down/upper_" + name, '0,0,0')
-        self.param_lower = self.range_str2list(self.param_lower)
-        self.param_upper = self.range_str2list(self.param_upper)
-        return self.param_lower, self.param_upper
 
     def push_range(self, name, lower, upper):
         self.lower[name].append(lower)
@@ -117,11 +92,21 @@ class window:
         else:
             print('cannot redo')
 
-    def show_image(self, name):
+    def show_image(self, window_name):
         global hsv
-        result = cv2.inRange(hsv, np.array(self.lower[name][-1], np.uint8),
-                             np.array(self.upper[name][-1], np.uint8))
-        cv2.imshow(name, result)
+        for name in window_name:
+            result = cv2.inRange(hsv, np.array(self.lower[name][-1], np.uint8),
+                                 np.array(self.upper[name][-1], np.uint8))
+            cv2.imshow(name, result)
+
+    def get_param(self, name):
+        self.param_lower = rospy.get_param(
+            "color_range/color_down/lower_" + name, '180,255,255')
+        self.param_upper = rospy.get_param(
+            "color_range/color_down/upper_" + name, '0,0,0')
+        self.param_lower = self.range_str2list(self.param_lower)
+        self.param_upper = self.range_str2list(self.param_upper)
+        return self.param_lower, self.param_upper
 
     def save(self):
         for name in self.lower:
@@ -150,9 +135,26 @@ class window:
         return tmp
 
 
+def callback(msg):
+    global img, wait, hsv
+
+    if wait == False:
+        arr = np.fromstring(msg.data, np.uint8)
+        img = cv2.imdecode(arr, 1)
+        img = cv2.resize(img, (320, 256))
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+
+def draw_circle(event, x, y, flags, param):
+    global pixel, click
+    if event == cv2.EVENT_LBUTTONDOWN:
+        click = True
+        pixel['x'], pixel['y'] = x, y
+
+
 def has_color(window_name, k):
     for name in window_name:
-        if k == ord(name[0]):
+        if k == ord(name[0]) and k != ord('m'):
             return name, True
     return None, False
 
@@ -197,8 +199,7 @@ def select_color():
     cv2.moveWindow('image', 0, 0)
     cv2.resizeWindow('image', (width / 3), height)
 
-    for name in window_name:
-        w.create(name)
+    w.create(window_name)
 
     cv2.createTrackbar('Hmin', 'image', 0, 180, nothing)
     cv2.createTrackbar('Smin', 'image', 0, 255, nothing)
@@ -227,7 +228,8 @@ def select_color():
 
         lower, upper = w.get_range('mask')
         lower_bar, upper_bar = get_trackbar()
-        if click:
+        
+        if click and can_clicks:
             h, s, v = hsv[pixel['y'], pixel['x']]
             [hl, sl, vl], [hu, su, vu] = w.get_range('mask')
             lower_current = [min(h, hl), min(s, sl), min(v, vl)]
@@ -242,11 +244,13 @@ def select_color():
                 lower_current, upper_current = w.get_range('mask')
                 w.push_range(name, lower_current, upper_current)
                 cv2.setTrackbarPos('m <-> c', 'image', 2)
+                can_click = False
             else:
                 lower_current, upper_current = w.get_param(name)
                 w.push_range('mask', lower_current, upper_current)
                 set_trackbar(lower_current, upper_current)
                 cv2.setTrackbarPos('m <-> c', 'image', 0)
+                can_click = True
 
             w.select[name] = not w.select[name]
         #  <-
@@ -260,8 +264,7 @@ def select_color():
         elif key == ord('q'):
             break
 
-        for name in window_name:
-            w.show_image(name)
+        w.show_image(window_name)
         cv2.imshow('image', hsv)
 
         click = False
