@@ -10,7 +10,7 @@ from vision_lib import *
 pixel = {}
 pixel['x'], pixel['y'] = -1, -1
 click = False
-can_click = False
+is_mask = False
 img = None
 hsv = None
 wait = False
@@ -46,8 +46,9 @@ class window:
             self.y = 0
 
     def create_range(self, name):
-        self.lower[name] = [[180, 255, 255]]
-        self.upper[name] = [[0, 0, 0]]
+        lower_param, upper_param = self.get_param(name)
+        self.lower[name] = [lower_param]
+        self.upper[name] = [upper_param]
         self.lower_tmp[name] = []
         self.upper_tmp[name] = []
         self.select[name] = False
@@ -80,6 +81,12 @@ class window:
             print('redo')
         else:
             print('cannot redo')
+
+    def reset_range(self, name):
+        self.lower[name].append([180, 255, 255])
+        self.upper[name].append([0, 0, 0])
+        set_trackbar(self.lower[name][-1], self.upper[name][-1])
+        print('reset')
 
     def show_image(self, window_name):
         global hsv
@@ -135,7 +142,6 @@ class window:
 
 def callback(msg):
     global img, wait, hsv
-
     if wait == False:
         arr = np.fromstring(msg.data, np.uint8)
         img = cv2.imdecode(arr, 1)
@@ -184,7 +190,7 @@ def compare_range(l, u, l1, u1):
 
 
 def select_color():
-    global pixel, img, wait, hsv, click
+    global pixel, img, wait, hsv, click, is_mask
 
     window_name = ['mask', 'red', 'orange', 'white', 'yellow']
 
@@ -227,14 +233,13 @@ def select_color():
         lower, upper = w.get_range('mask')
         lower_bar, upper_bar = get_trackbar()
 
-        if click and can_clicks:
+        if click and is_mask:
             h, s, v = hsv[pixel['y'], pixel['x']]
             [hl, sl, vl], [hu, su, vu] = w.get_range('mask')
             lower_current = [min(h, hl), min(s, sl), min(v, vl)]
             upper_current = [max(h, hu), max(s, su), max(v, vu)]
             w.push_range('mask', lower_current, upper_current)
             set_trackbar(lower_current, upper_current)
-
         elif compare_range(lower, upper, lower_bar, upper_bar):
             w.push_range('mask', lower_bar, upper_bar)
         elif status:
@@ -242,21 +247,21 @@ def select_color():
                 lower_current, upper_current = w.get_range('mask')
                 w.push_range(name, lower_current, upper_current)
                 cv2.setTrackbarPos('m <-> c', 'image', 2)
-                can_click = False
+                is_mask = False
             else:
                 lower_current, upper_current = w.get_param(name)
                 w.push_range('mask', lower_current, upper_current)
                 set_trackbar(lower_current, upper_current)
                 cv2.setTrackbarPos('m <-> c', 'image', 0)
-                can_click = True
-
+                is_mask = True
             w.select[name] = not w.select[name]
-        #  <-
-        elif key == ord(','):
-            w.undo_range('mask')
-        # ->
-        elif key == ord('.'):
-            w.redo_range('mask')
+        elif is_mask:
+            if key == ord('z'):
+                w.undo_range('mask')
+            elif key == ord('x'):
+                w.redo_range('mask')
+            elif key == ord('c'):
+                w.reset_range('mask')
         elif key == ord('s'):
             w.save()
         elif key == ord('q'):
@@ -264,7 +269,6 @@ def select_color():
 
         w.show_image(window_name)
         cv2.imshow('image', hsv)
-
         click = False
         status = False
     cv2.destroyAllWindows()
