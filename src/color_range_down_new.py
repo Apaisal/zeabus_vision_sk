@@ -4,7 +4,6 @@ import numpy as np
 import rospkg
 import rospy
 from sensor_msgs.msg import CompressedImage
-
 from vision_lib import *
 
 pixel = {}
@@ -14,15 +13,16 @@ is_mask = False
 img = None
 hsv = None
 wait = False
+width = 1366
+height = 768
 
 
 class window:
+    global width, height, hsv
 
     def __init__(self):
-        self.width = 1366
-        self.height = 768
         self.size = 250
-        self.x = self.width / 3
+        self.x = width / 3
         self.y = 0
         self.lower = {}
         self.upper = {}
@@ -41,7 +41,7 @@ class window:
 
     def update_position(self):
         self.y += self.size
-        if self.y + self.size >= self.height:
+        if self.y + self.size >= height:
             self.x += self.size
             self.y = 0
 
@@ -89,7 +89,6 @@ class window:
         print('reset')
 
     def show_image(self, window_name):
-        global hsv
         for name in window_name:
             result = cv2.inRange(hsv, np.array(self.lower[name][-1], np.uint8),
                                  np.array(self.upper[name][-1], np.uint8))
@@ -190,21 +189,12 @@ def compare_range(l, u, l1, u1):
 
 
 def select_color():
-    global pixel, img, wait, hsv, click, is_mask
-
+    global pixel, img, wait, hsv, click, is_mask, width, height
     window_name = ['mask', 'red', 'orange', 'white', 'yellow']
-
-    width = 1366
-    height = 768
-
-    w = window()
 
     cv2.namedWindow('image', flags=cv2.WINDOW_NORMAL)
     cv2.moveWindow('image', 0, 0)
     cv2.resizeWindow('image', (width / 3), height)
-
-    w.create(window_name)
-
     cv2.createTrackbar('Hmin', 'image', 0, 180, nothing)
     cv2.createTrackbar('Smin', 'image', 0, 255, nothing)
     cv2.createTrackbar('Vmin', 'image', 0, 255, nothing)
@@ -212,11 +202,13 @@ def select_color():
     cv2.createTrackbar('Smax', 'image', 0, 255, nothing)
     cv2.createTrackbar('Vmax', 'image', 0, 255, nothing)
     cv2.createTrackbar('m <-> c', 'image', 0, 2, nothing)
-
     set_trackbar([180, 255, 255], [0, 0, 0])
     cv2.setTrackbarPos('m <-> c', 'image', 1)
-
     cv2.setMouseCallback('image', draw_circle)
+
+    w = window()
+    w.create(window_name)
+
     while(img is None):
         rospy.sleep(0.01)
 
@@ -229,7 +221,6 @@ def select_color():
             wait = False
 
         name, status = has_color(window_name, key)
-
         lower, upper = w.get_range('mask')
         lower_bar, upper_bar = get_trackbar()
 
