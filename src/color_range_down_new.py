@@ -70,11 +70,22 @@ class window:
         self.upper_tmp[name] = []
         self.select[name] = False
 
+    def range_str2list(self, str):
+        str = str.split(',')
+        return [int(str[0]), int(str[1]), int(str[2])]
+
+    def range_list2str(self, list):
+        seq = (str(list[0]), str(list[1]), str(list[2]))
+        ch_join = ','
+        return ch_join.join(seq)
+
     def get_param(self, name):
         self.param_lower = rospy.get_param(
-            "color_range/color_down/lower_" + name, [180, 255, 255])
+            "color_range/color_down/lower_" + name, '180,255,255')
         self.param_upper = rospy.get_param(
-            "color_range/color_down/upper_" + name, [0, 0, 0])
+            "color_range/color_down/upper_" + name, '0,0,0')
+        self.param_lower = self.range_str2list(self.param_lower)
+        self.param_upper = self.range_str2list(self.param_upper)
         return self.param_lower, self.param_upper
 
     def push_range(self, name, lower, upper):
@@ -111,30 +122,29 @@ class window:
         cv2.imshow(name, result)
 
     def save(self):
+        for name in self.lower:
+            if(name == 'mask'):
+                continue
 
-        try:
-            for i in range(0, 3):
-                for name in self.lower:
-                    rospy.set_param(
-                        '/color_range/color_down/lower_'+name, self.lower[name][-1])
-                    rospy.set_param(
-                        '/color_range/color_down/upper_'+name, self.upper[name][-1])
+            rospy.set_param(
+                '/color_range/color_down/lower_' + name, self.range_list2str(self.lower[name][-1]))
+            rospy.set_param(
+                '/color_range/color_down/upper_' + name, self.range_list2str(self.upper[name][-1]))
 
-                f = open(self.path + "/params/color_down.yaml", "w")
-                x = self.genyaml()
-                f.write(x)
-                f.close()
-            print 'save'
-        except Exception:
-            print 'not save'
+        f = open(self.path + "/params/color_down.yaml", "w")
+        x = self.genyaml()
+        f.write(x)
+        f.close()
+        print 'save'
 
     def genyaml(self):
-        tmp = "color_down:\n"
+        tmp = " color_down:\n"
         for name in self.lower:
-            tmp += " " + "upper_" + name + ": " + str(self.upper[name][-1]) + "\n\n" +\
-                " " + "lower_" + name + ": " + \
-                str(self.lower[name][-1]) + "\n\n"
-        print(tmp)
+            if(name == 'mask'):
+                continue
+            tmp += " " + " upper_" + name + ": '" + self.range_list2str(self.upper[name][-1]) + "'\n\n" +\
+                " " + " lower_" + name + ": '" + \
+                self.range_list2str(self.lower[name][-1]) + "'\n\n"
         return tmp
 
 
