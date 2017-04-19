@@ -6,6 +6,7 @@ import rospy
 from sensor_msgs.msg import CompressedImage
 import dynamic_reconfigure.client
 import time
+import math
 
 img = None
 hsv = None
@@ -31,10 +32,14 @@ def set_param(param, value):
 
 def main():
     global client, img
-    exposure = [15, 30, 45]
+    f = 1.4
+    # exposure = [5, 15, 45]
+    exposure = [3, 15, 30]
     images = []
+
     set_param('auto_frame_rate', True)
     set_param('auto_exposure', False)
+    
     for ev in exposure:
         t = time.time()
         set_param('exposure', int(ev))
@@ -43,8 +48,18 @@ def main():
         time.sleep(1.5)
         name = 'image exposure :' + str(ev)
         images.append(img.copy())
+        # EV = log2(f^2 / t)
+        # et = math.pow(f, 2.0) / math.pow(2.0, ev)
         cv2.imshow(name, img.copy())
-        
+
+    exposure_times = np.array(exposure, dtype=np.float32)
+    merge_debvec = cv2.createMergeDebevec()
+    hdr_debvec = merge_debvec.process(images, times=exposure_times.copy())
+    merge_robertson = cv2.createMergeRobertson()
+    hdr_robertson = merge_robertson.process(
+        images, times=exposure_times.copy())
+    cv2.imshow('hdr_debvec', hdr_debvec)
+    cv2.imshow('hdr_robertson', hdr_robertson)
     cv2.waitKey(30000)
 
 
