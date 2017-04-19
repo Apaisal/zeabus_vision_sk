@@ -22,33 +22,31 @@ def callback(msg):
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
 
-def set_exposure(value):
+def set_param(param, value):
     global client
     client = dynamic_reconfigure.client.Client('ueye_cam_nodelet')
-    if value != -1:
-        params = {'auto_exposure': False}
-        params = {'exposure': value}
-    else:
-        params = {'auto_exposure': True}
+    params = {str(param): value}
     config = client.update_configuration(params)
 
 
 def main():
     global client, img
-    exposure = [0, 15, 30, -1]
+    exposure = [15, 30, 45]
     images = []
+    set_param('auto_frame_rate', True)
+    set_param('auto_exposure', False)
     for ev in exposure:
         t = time.time()
-        set_exposure(ev)
+        set_param('exposure', int(ev))
         delta_t = time.time() - t
-        # time: 0.0346131324768
-        # time: 0.0417408943176
-        # time: 0.0291020870209
         print("time: {0}".format(delta_t))
-        time.sleep(2)
+        time.sleep(1.5)
         name = 'image exposure :' + str(ev)
+        images.append(img.copy())
         cv2.imshow(name, img.copy())
+        
     cv2.waitKey(30000)
+
 
 if __name__ == '__main__':
     rospy.init_node('AEB', anonymous=True)
