@@ -30,22 +30,26 @@ def set_param(param, value):
     config = client.update_configuration(params)
 
 
+def get_param(param):
+    return rospy.get_param('ueye_cam_nodelet/' + str(param), False)
+
+
 def main():
     global client, img
-    f = 1.4
-    # exposure = [5, 15, 45]
-    exposure = [3, 15, 30]
     images = []
-
+    delta = 25
     set_param('auto_frame_rate', True)
+    ev_auto = get_param('exposure')
+    print("EV_auto: {0}".format(ev_auto))
     set_param('auto_exposure', False)
-    
+    # exposure = [ev_auto - delta, ev_auto, ev_auto + delta]
+    exposure = [ev_auto - delta, ev_auto + delta]
     for ev in exposure:
         t = time.time()
         set_param('exposure', int(ev))
         delta_t = time.time() - t
         print("time: {0}".format(delta_t))
-        time.sleep(1.5)
+        time.sleep(1)
         name = 'image exposure :' + str(ev)
         images.append(img.copy())
         # EV = log2(f^2 / t)
@@ -53,15 +57,25 @@ def main():
         cv2.imshow(name, img.copy())
 
     exposure_times = np.array(exposure, dtype=np.float32)
+
     merge_debvec = cv2.createMergeDebevec()
     hdr_debvec = merge_debvec.process(images, times=exposure_times.copy())
+
     merge_robertson = cv2.createMergeRobertson()
     hdr_robertson = merge_robertson.process(
         images, times=exposure_times.copy())
+
+    merge_mertens = cv2.createMergeMertens()
+    res_mertens = merge_mertens.process(images)
+    
     cv2.imshow('hdr_debvec', hdr_debvec)
     cv2.imshow('hdr_robertson', hdr_robertson)
-    cv2.waitKey(30000)
-
+    cv2.imshow('res_mertens', res_mertens)
+    
+    while True:
+        key = cv2.waitKey(1) & 0xff
+        if key == ord('q'):
+            break
 
 if __name__ == '__main__':
     rospy.init_node('AEB', anonymous=True)
