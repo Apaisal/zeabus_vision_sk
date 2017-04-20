@@ -38,6 +38,7 @@ def main():
     global client, img
     images = []
     delta = 25
+    set_param('auto_exposure', True)
     set_param('auto_frame_rate', True)
     ev_auto = get_param('exposure')
     print("EV_auto: {0}".format(ev_auto))
