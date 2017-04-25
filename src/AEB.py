@@ -66,12 +66,18 @@ def main():
     hdr_robertson = merge_robertson.process(
         images, times=exposure_times.copy())
 
+    tonemap1 = cv2.createTonemapDurand(gamma=2.2)
+    res_debvec = tonemap1.process(hdr_debvec.copy())
+    tonemap2 = cv2.createTonemapDurand(gamma=1.3)
+    res_robertson = tonemap2.process(hdr_robertson.copy())
+
+#  not  use exposuree time
     merge_mertens = cv2.createMergeMertens()
     res_mertens = merge_mertens.process(images)
     
-    cv2.imshow('hdr_debvec', hdr_debvec)
-    cv2.imshow('hdr_robertson', hdr_robertson)
-    cv2.imshow('res_mertens', res_mertens)
+    cv2.imshow('debvec', res_debvec)
+    cv2.imshow('robertson', res_robertson)
+    cv2.imshow('mertens', res_mertens)
     
     while True:
         key = cv2.waitKey(1) & 0xff
