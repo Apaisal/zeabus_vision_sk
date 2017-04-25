@@ -4,6 +4,5 @@
 	</rosparam>
 	<node pkg="zeabus_vision_sk" name="color_range_down" type="vision_down.py" output="screen">
 		<param name="topic_down" value='/rightcam_bottom/image_raw/compressed'/>
-		<!--<param name="topic_down" value='/leftcam_bottom/image_raw/compressed'/>-->
 	</node>
 </launch>
