@@ -58,10 +58,10 @@ def main():
         cv2.imshow(name, img.copy())
 
     exposure_times = np.array(exposure, dtype=np.float32)
-
+# debvec
     merge_debvec = cv2.createMergeDebevec()
     hdr_debvec = merge_debvec.process(images, times=exposure_times.copy())
-
+# robertson
     merge_robertson = cv2.createMergeRobertson()
     hdr_robertson = merge_robertson.process(
         images, times=exposure_times.copy())
@@ -71,14 +71,14 @@ def main():
     tonemap2 = cv2.createTonemapDurand(gamma=1.3)
     res_robertson = tonemap2.process(hdr_robertson.copy())
 
-#  not  use exposuree time
+#  mertens not
     merge_mertens = cv2.createMergeMertens()
     res_mertens = merge_mertens.process(images)
-    
+
     cv2.imshow('debvec', res_debvec)
     cv2.imshow('robertson', res_robertson)
     cv2.imshow('mertens', res_mertens)
-    
+
     while True:
         key = cv2.waitKey(1) & 0xff
         if key == ord('q'):
