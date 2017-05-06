@@ -4,6 +4,34 @@ import numpy as np
 import math
 import rospy
 
+def range_str2list(str):
+    str = str.split(',')
+    return [int(str[0]), int(str[1]), int(str[2])]
+
+
+def getColor(color, camera):
+    # Navigate
+    color_list_down = ['orange', 'white', 'yellow', 'red']
+    color_list_top = ['orange', 'white', 'yellow', 'red']
+    if camera == 'down':
+        for c in color_list_down:
+            if color == c:
+                lower = np.array(rospy.get_param(
+                    '/color_range/color_down/lower_' + c), np.uint8)
+                upper = np.array(rospy.get_param(
+                    '/color_range/color_down/upper_' + c), np.uint8)
+    else:
+        for c in color_list_top:
+            if color == c:
+                lower = np.array(rospy.get_param(
+                    '/color_range/color_top/lower_' + c), np.uint8)
+                upper = np.array(rospy.get_param(
+                    '/color_range/color_top/upper_' + c), np.uint8)
+    lower = range_str2list(param_lower)
+    upper = range_str2list(param_upper)
+    return lower, upper
+
+
 def equalization(frame):
     img = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     h, s, v = cv2.split(img)
@@ -210,7 +238,8 @@ def shrinking_hsv(img):
     result = cv2.merge((hs, ss, vs))
     return result
 
+
 def mean_staturation(hsv):
-    h,s,v = cv2.split(hsv)
+    h, s, v = cv2.split(hsv)
     mean = cv2.mean(v)
     print('mean: {0}'.format(mean))
