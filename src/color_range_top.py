@@ -1,3 +1,9 @@
+"""
+Copyright @ EmOne (Thailand) Co.Ltd. 2017
+Author: Anol Paisal <info@emone.co.th>
+Date: 2017/05/15
+"""
+
 #!/usr/bin/env python
 import cv2
 import numpy as np
