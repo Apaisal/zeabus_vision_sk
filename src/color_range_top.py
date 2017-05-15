@@ -87,16 +87,23 @@ def threshold_callback(params):
         box = np.int0(box)
 	if box[1][1] < box[3][1] and box[0][0] < box[2][0]:
             img_roi = hsv[int(box[1][1]):int(box[3][1]), int(box[0][0]):int(box[2][0])]
-#           img_roi = cv2.cvtColor(img_roi, cv2.COLOR_BGR2GRAY)
+            img_roi = cv2.cvtColor(img_roi, cv2.COLOR_BGR2GRAY)
             cv2.imshow('ROI', img_roi)
-#	    circles = cv2.HoughCircles(img_roi, cv2.HOUGH_GRADIENT, 1, 20, param1=50, param2=30, minRadius=0, maxRadius=0)
-        #    print (circles)
-#	    for i in circles[0,:]:
+            
+#            lower_blue = np.array([110,50,50])
+#            upper_blue = np.array([130,255,255])
+#            mask = cv2.inRange(img_roi, lower_blue, upper_blue)
+#            res = cv2.bitwise_and(img_roi,img_roi, mask= mask)
+	    circles = cv2.HoughCircles(img_roi, cv2.HOUGH_GRADIENT, 1, 10, param1=80, param2=25, minRadius=0, maxRadius=0)
+            if circles != None:
+                for i in circles[0,:]:
             # draw the outer circle
-#                cv2.circle(hsv,(i[0],i[1]),i[2],(0,255,0),2)
+                    cv2.circle(hsv,(int(box[1][0]+i[0]),int(box[1][1]+i[1])),i[2],(0,255,0),2)
             # draw the center of the circle
-#                cv2.circle(hsv,(i[0],i[1]),2,(0,0,255),3)
-#    cv2.imshow('circle', hsv)
+#                    cv2.circle(hsv,(i[0],i[1]),2,(0,0,255),3)
+                    cv2.circle(hsv,(int(box[1][0]+i[0]),int(box[1][1]+i[1])),2,(0,0,255),3)
+                    cv2.imshow('circle', hsv)
+#                    cv2.imshow('ROI', img_roi)
 
 #        cv2.drawContours(drawing, [box], 0, (255,255,255), cv2.FILLED) 
 
@@ -137,7 +144,7 @@ def main():
 	hist,bins = np.histogram(img.ravel(),256,[0,256])
         
         cv2.imshow('Source', img)
-        cv2.imshow('Gray Blur', img_gray)
+#        cv2.imshow('Gray Blur', img_gray)
   	
         threshold_callback(thresh) 
 
