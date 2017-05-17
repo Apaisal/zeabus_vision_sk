@@ -1,10 +1,9 @@
+#!/usr/bin/env python
 """
 Copyright @ EmOne (Thailand) Co.Ltd. 2017
 Author: Anol Paisal <info@emone.co.th>
 Date: 2017/05/15
 """
-
-#!/usr/bin/env python
 import cv2
 import numpy as np
 import rospkg
@@ -20,16 +19,37 @@ hsv = None
 client = None
 wait = False
 thresh = 100
+gamma = 10
+
+def on_gamma_callback(param):
+   global gamma
+   gamma = param
+
+def adjust_gamma(image, gamma=1):
+# build a lookup table mapping the pixel values [0, 255] to
+# their adjusted gamma values
+    if gamma == 0:
+        g = 1.0
+    else:
+        g = gamma / 10.0   
+    invGamma = 1.0 / g
+    table = np.array([((i / 255.0) ** invGamma) * 255
+        for i in np.arange(0, 256)]).astype("uint8")
+
+# apply gamma correction using the lookup table
+    return cv2.LUT(image, table)
 
 def threshold_callback(params):
-    global img_gray, thresh
+    global img_gray, thresh, gamma
     thresh = params
 #    ret, thresh_out = cv2.threshold(img_gray, thresh, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+#    img_gray = adjust_gamma(img_gray, gamma)
+#    cv2.imshow('gamma', img_gray)
     thresh_out = cv2.adaptiveThreshold(img_gray, 255, \
     		cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
 #    thresh_out = cv2.adaptiveThreshold(img_gray, 255, \
 #		cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)
-#    cv2.imshow('thresh out', thresh_out)
+    cv2.imshow('thresh out', thresh_out)
 
 # noise removal
     kernel = np.ones((3,3),np.uint8)
@@ -100,15 +120,16 @@ def threshold_callback(params):
 #            upper_blue = np.array([130,255,255])
 #            mask = cv2.inRange(img_roi, lower_blue, upper_blue)
 #            res = cv2.bitwise_and(img_roi,img_roi, mask= mask)
-	    circles = cv2.HoughCircles(img_roi, cv2.HOUGH_GRADIENT, 1, 10, param1=80, param2=25, minRadius=0, maxRadius=0)
+	    circles = cv2.HoughCircles(img_roi, cv2.HOUGH_GRADIENT, 1, 1, param1=80, param2=20, minRadius=0, maxRadius=0)
             if circles != None:
                 for i in circles[0,:]:
             # draw the outer circle
-                    cv2.circle(hsv,(int(box[1][0]+i[0]),int(box[1][1]+i[1])),i[2],(0,255,0),2)
+                    hsv_drawing = hsv.copy()
+                    cv2.circle(hsv_drawing,(int(box[1][0]+i[0]),int(box[1][1]+i[1])),i[2],(0,255,0),2)
             # draw the center of the circle
 #                    cv2.circle(hsv,(i[0],i[1]),2,(0,0,255),3)
-                    cv2.circle(hsv,(int(box[1][0]+i[0]),int(box[1][1]+i[1])),2,(0,0,255),3)
-                    cv2.imshow('circle', hsv)
+                    cv2.circle(hsv_drawing,(int(box[1][0]+i[0]),int(box[1][1]+i[1])),2,(0,0,255),3)
+                    cv2.imshow('circle', hsv_drawing)
 #                    cv2.imshow('ROI', img_roi)
 
 #        cv2.drawContours(drawing, [box], 0, (255,255,255), cv2.FILLED) 
@@ -126,18 +147,20 @@ def threshold_callback(params):
 #    cv2.imshow('Contour', drawing)
 
 def callback(msg):
-    global img, img_gray, hsv
+    global img, img_gray, hsv, gamma
     if wait == False:
         arr = np.fromstring(msg.data, np.uint8)
         img = cv2.imdecode(arr, 1)
-        img = cv2.resize(img, (320, 256))
-        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        img_resize = cv2.resize(img, (320, 256))
+        img_gamma = adjust_gamma(img_resize, gamma)
+        img_gray = cv2.cvtColor(img_gamma, cv2.COLOR_BGR2GRAY)
+        hsv = cv2.cvtColor(img_gamma, cv2.COLOR_BGR2HSV)
 
 def main():
     global client, img, img_gray, thresh
     cv2.namedWindow('Source', flags=cv2.WINDOW_NORMAL)
     cv2.createTrackbar('Threshold: ', 'Source', thresh, 255, threshold_callback)
+    cv2.createTrackbar('Gamma: ', 'Source', gamma, 20, on_gamma_callback)
     
     while(img is None):
         rospy.sleep(0.01)
