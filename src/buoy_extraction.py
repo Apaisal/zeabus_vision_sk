@@ -12,6 +12,7 @@ from sensor_msgs.msg import CompressedImage
 #import dynamic_reconfigure.client
 import time
 import math
+from matplotlib import pyplot as plt
 
 img = None
 img_gray = None
@@ -19,7 +20,7 @@ hsv = None
 client = None
 wait = False
 thresh = 100
-gamma = 10
+gamma = 7
 
 def on_gamma_callback(param):
    global gamma
@@ -42,10 +43,14 @@ def adjust_gamma(image, gamma=1):
 def threshold_callback(params):
     global img_gray, thresh, gamma
     thresh = params
+#blur grey 3*3 
+    img_gray = cv2.medianBlur(img_gray,5)
+#        img_gray = cv2.GaussianBlur(img_gray,(5,5), 0)
+
 #    ret, thresh_out = cv2.threshold(img_gray, thresh, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 #    img_gray = adjust_gamma(img_gray, gamma)
 #    cv2.imshow('gamma', img_gray)
-    thresh_out = cv2.adaptiveThreshold(img_gray, 255, \
+    thresh_out = cv2.adaptiveThreshold(img_gray, 255, 
     		cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
 #    thresh_out = cv2.adaptiveThreshold(img_gray, 255, \
 #		cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)
@@ -94,7 +99,7 @@ def threshold_callback(params):
 
 #    for i in range(len(contours)):
 #	hull.append(cv2.convexHull(contours[i]))
-
+    hsv_drawing = hsv.copy()
     for i in range(len(contours)):
         minRect.append(cv2.minAreaRect(contours[i]))
 #        if len(contours[i]) < 5:
@@ -114,23 +119,41 @@ def threshold_callback(params):
 	if box[1][1] < box[3][1] and box[0][0] < box[2][0]:
             img_roi = hsv[int(box[1][1]):int(box[3][1]), int(box[0][0]):int(box[2][0])]
             img_roi = cv2.cvtColor(img_roi, cv2.COLOR_BGR2GRAY)
-            cv2.imshow('ROI', img_roi)
+            #cv2.imshow('ROI', img_roi)
+            # create a CLAHE object (Arguments are optional).
+            clahe = cv2.createCLAHE(clipLimit=1.0, tileGridSize=(3,3))
+            cl1 = clahe.apply(img_roi)
+            res = np.hstack((img_roi, cl1))
             
+#            equ = cv2.equalizeHist(img_roi)
+#            res = np.hstack((img_roi, img_roi))
+            cv2.imshow('equ', res)
 #            lower_blue = np.array([110,50,50])
 #            upper_blue = np.array([130,255,255])
 #            mask = cv2.inRange(img_roi, lower_blue, upper_blue)
 #            res = cv2.bitwise_and(img_roi,img_roi, mask= mask)
-	    circles = cv2.HoughCircles(img_roi, cv2.HOUGH_GRADIENT, 1, 1, param1=80, param2=20, minRadius=0, maxRadius=0)
+    	    circles = cv2.HoughCircles(cl1, cv2.HOUGH_GRADIENT, 1, 1, param1=80, param2=20, minRadius=0, maxRadius=0)
+#	    circles = cv2.HoughCircles(img_roi, cv2.HOUGH_GRADIENT, 1, 1, param1=80, param2=20, minRadius=0, maxRadius=0)
             if circles != None:
                 for i in circles[0,:]:
             # draw the outer circle
-                    hsv_drawing = hsv.copy()
+                    
+                    cv2.imshow('ROI', img_roi)
                     cv2.circle(hsv_drawing,(int(box[1][0]+i[0]),int(box[1][1]+i[1])),i[2],(0,255,0),2)
             # draw the center of the circle
 #                    cv2.circle(hsv,(i[0],i[1]),2,(0,0,255),3)
                     cv2.circle(hsv_drawing,(int(box[1][0]+i[0]),int(box[1][1]+i[1])),2,(0,0,255),3)
                     cv2.imshow('circle', hsv_drawing)
-#                    cv2.imshow('ROI', img_roi)
+ 
+#                    hist,bins = np.histogram(img_roi.flatten(), 256,[0,256])
+#                    cdf = hist.cumsum()
+#                    cdf_normalized = cdf * hist.max()/ cdf.max()
+#                    plt.plot(cdf_normalized, color = 'b')
+#                    plt.hist(img.flatqten(),256,[0,256], color = 'r')
+#                    plt.xlim([0,256])
+#                    plt.legend(('cdf','histogram'), loc = 'upper left')
+#                    plt.show()
+
 
 #        cv2.drawContours(drawing, [box], 0, (255,255,255), cv2.FILLED) 
 
@@ -166,12 +189,7 @@ def main():
         rospy.sleep(0.01)
     
     while True:
-
-        #blur grey 3*3 
-        img_gray = cv2.medianBlur(img_gray,5)
-#        img_gray = cv2.GaussianBlur(img_gray,(5,5), 0)
-	hist,bins = np.histogram(img.ravel(),256,[0,256])
-        
+       
         cv2.imshow('Source', img)
 #        cv2.imshow('Gray Blur', img_gray)
   	
