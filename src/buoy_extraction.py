@@ -13,8 +13,10 @@ from sensor_msgs.msg import CompressedImage
 import time
 import math
 from matplotlib import pyplot as plt
+from std_msgs.msg import String
 
 img = None
+img_gamma = None
 img_gray = None
 hsv = None
 client = None
@@ -41,7 +43,7 @@ def adjust_gamma(image, gamma=1):
     return cv2.LUT(image, table)
 
 def threshold_callback(params):
-    global img_gray, thresh, gamma
+    global img_gray, thresh, gamma, img_gamma
     thresh = params
 #blur grey 3*3 
     img_gray = cv2.medianBlur(img_gray,5)
@@ -118,6 +120,9 @@ def threshold_callback(params):
         box = np.int0(box)
 	if box[1][1] < box[3][1] and box[0][0] < box[2][0]:
             img_roi = hsv[int(box[1][1]):int(box[3][1]), int(box[0][0]):int(box[2][0])]
+            
+            img_rgb_roi = cv2.cvtColor(img_roi, cv2.COLOR_HSV2BGR)
+            
             img_roi = cv2.cvtColor(img_roi, cv2.COLOR_BGR2GRAY)
             #cv2.imshow('ROI', img_roi)
             # create a CLAHE object (Arguments are optional).
@@ -144,7 +149,42 @@ def threshold_callback(params):
 #                    cv2.circle(hsv,(i[0],i[1]),2,(0,0,255),3)
                     cv2.circle(hsv_drawing,(int(box[1][0]+i[0]),int(box[1][1]+i[1])),2,(0,0,255),3)
                     cv2.imshow('circle', hsv_drawing)
- 
+                    cv2.imshow('img_rgb_roi', img_rgb_roi)
+                 
+                    # create a water index pixel mask
+                    w = img_rgb_roi[0,0]
+                    print w
+                    b,g,r =cv2.split(img_rgb_roi)
+                    mask = np.zeros(img_rgb_roi.shape[:2], np.uint8)
+
+                    mask[:, :] = w[0]  
+                    #mask_inv = cv2.bitwise_not(mask)  
+                    cv2.imshow('b_mask_inv',mask)                
+                    b_masked_img = cv2.subtract(b, mask)
+                    cv2.imshow('b_masked_img', b_masked_img)
+                    b_histr,bins = np.histogram(b_masked_img.ravel(), 256,[0,256])
+
+                    mask[:, :] = w[1]
+                    #mask_inv = cv2.bitwise_not(mask)
+                    cv2.imshow('g_mask_inv',mask)                
+                    g_masked_img = cv2.subtract(g, mask)
+                    cv2.imshow('g_masked_img', g_masked_img)
+                    g_histr,bins = np.histogram(g_masked_img.ravel(), 256,[0,256])
+
+                    mask[:, :] = w[2]               
+                    #mask_inv = cv2.bitwise_not(mask)
+                    cv2.imshow('r_mask_inv',mask)                     
+                    r_masked_img = cv2.subtract(r, mask)
+                    cv2.imshow('r_masked_img', r_masked_img)
+                    r_histr,bins = np.histogram(r_masked_img.ravel(), 256,[0,256])
+                    
+                    m_img = cv2.merge((b_masked_img,g_masked_img,r_masked_img))
+                    cv2.imshow('m_img', m_img)
+#                    b_histr = cv2.calcHist([img_rgb_roi],[0],None,[256],[0,256])                   
+#                    g_histr = cv2.calcHist([img_rgb_roi],[1],None,[256],[0,256])                   
+#                    r_histr = cv2.calcHist([img_rgb_roi],[2],None,[256],[0,256])                   
+
+
 #                    hist,bins = np.histogram(img_roi.flatten(), 256,[0,256])
 #                    cdf = hist.cumsum()
 #                    cdf_normalized = cdf * hist.max()/ cdf.max()
@@ -153,7 +193,7 @@ def threshold_callback(params):
 #                    plt.xlim([0,256])
 #                    plt.legend(('cdf','histogram'), loc = 'upper left')
 #                    plt.show()
-
+                    return (int(box[1][0]+i[0]), int(box[1][1]+i[1]), i[2], b_histr, g_histr, r_histr)
 
 #        cv2.drawContours(drawing, [box], 0, (255,255,255), cv2.FILLED) 
 
@@ -180,29 +220,42 @@ def callback(msg):
         hsv = cv2.cvtColor(img_gamma, cv2.COLOR_BGR2HSV)
 
 def main():
-    global client, img, img_gray, thresh
+    global client, img, img_gray, thresh, img_gamma
+
+    pub = rospy.Publisher('buoy_locator', String, queue_size=10)
+    rate = rospy.Rate(10) # 10Hz
+    
     cv2.namedWindow('Source', flags=cv2.WINDOW_NORMAL)
     cv2.createTrackbar('Threshold: ', 'Source', thresh, 255, threshold_callback)
     cv2.createTrackbar('Gamma: ', 'Source', gamma, 20, on_gamma_callback)
     
     while(img is None):
-        rospy.sleep(0.01)
+        rate.sleep() #rospy.sleep(0.01)
     
-    while True:
+    while not rospy.is_shutdown():
        
         cv2.imshow('Source', img)
 #        cv2.imshow('Gray Blur', img_gray)
   	
-        threshold_callback(thresh) 
-
+        res = threshold_callback(thresh) 
+        if res != None:
+            buoy = "x={},y={},r={},lb={},lg={},lr={}".format(res[0], res[1], res[2], res[3], res[4], res[5])
+            rospy.loginfo(buoy)
+            pub.publish(buoy)
+        
         key = cv2.waitKey(1) & 0xff
         if key == ord('q'):
             break
-
+        rate.sleep()
+        
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    rospy.init_node('AEB', anonymous=True)
-    topic = "/image_raw/compressed"
-    rospy.Subscriber(topic, CompressedImage, callback)
-    main()
+    try:
+        rospy.init_node('buoy', anonymous=True)
+        topic = "/image_raw/compressed"
+        rospy.Subscriber(topic, CompressedImage, callback)
+        main()
+    except rospy.ROSInterruptException:
+        pass
+    
