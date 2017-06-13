@@ -143,13 +143,13 @@ def threshold_callback(params):
                 for i in circles[0,:]:
             # draw the outer circle
                     
-                    cv2.imshow('ROI', img_roi)
+#                    cv2.imshow('ROI', img_roi)
                     cv2.circle(hsv_drawing,(int(box[1][0]+i[0]),int(box[1][1]+i[1])),i[2],(0,255,0),2)
             # draw the center of the circle
 #                    cv2.circle(hsv,(i[0],i[1]),2,(0,0,255),3)
                     cv2.circle(hsv_drawing,(int(box[1][0]+i[0]),int(box[1][1]+i[1])),2,(0,0,255),3)
-                    cv2.imshow('circle', hsv_drawing)
-                    cv2.imshow('img_rgb_roi', img_rgb_roi)
+#                    cv2.imshow('circle', hsv_drawing)
+#                    cv2.imshow('img_rgb_roi', img_rgb_roi)
                  
                     # create a water index pixel mask
                     w = img_rgb_roi[0,0]
@@ -161,40 +161,39 @@ def threshold_callback(params):
                     #mask_inv = cv2.bitwise_not(mask)  
 #                    cv2.imshow('b_mask',mask)                
                     b_masked_img = cv2.subtract(b, mask)
-                    cv2.imshow('b_masked_img', b_masked_img)
+#                    cv2.imshow('b_masked_img', b_masked_img)
                     b_histr,bins = np.histogram(b_masked_img.ravel(), 256,[0,256])
-#                    b_cdf = b_histr.cumsum()
+                    b_cdf = b_histr.cumsum()
 #                    b_cdf_normalized = b_cdf * b_histr.max()/ b_cdf.max()
                    
                     mask[:, :] = w[1]
                     #mask_inv = cv2.bitwise_not(mask)
                     #cv2.imshow('g_mask',mask)                
                     g_masked_img = cv2.subtract(g, mask)
-                    cv2.imshow('g_masked_img', g_masked_img)
+#                    cv2.imshow('g_masked_img', g_masked_img)
                     g_histr,bins = np.histogram(g_masked_img.ravel(), 256,[0,256])
-#                    g_cdf = g_histr.cumsum()
+                    g_cdf = g_histr.cumsum()
 #                    g_cdf_normalized = g_cdf * g_histr.max()/ g_cdf.max()
                     
                     mask[:, :] = w[2]               
                     #mask_inv = cv2.bitwise_not(mask)
                     #cv2.imshow('r_mask',mask)                     
                     r_masked_img = cv2.subtract(r, mask)
-                    cv2.imshow('r_masked_img', r_masked_img)
+#                    cv2.imshow('r_masked_img', r_masked_img)
                     r_histr,bins = np.histogram(r_masked_img.ravel(), 256,[0,256])
-#                    r_cdf = r_histr.cumsum()
+                    r_cdf = r_histr.cumsum()
 #                    r_cdf_normalized = r_cdf * r_histr.max()/ r_cdf.max()
                     
-                    m_img = cv2.merge((b_masked_img,g_masked_img,r_masked_img))
-                    cv2.imshow('m_img', m_img)
+#                    m_img = cv2.merge((b_masked_img,g_masked_img,r_masked_img))
+#                    cv2.imshow('m_img', m_img)
 #                    b_histr = cv2.calcHist([img_rgb_roi],[0],None,[256],[0,256])                   
 #                    g_histr = cv2.calcHist([img_rgb_roi],[1],None,[256],[0,256])                   
 #                    r_histr = cv2.calcHist([img_rgb_roi],[2],None,[256],[0,256])                   
-                    total = b_histr[0] + g_histr[0] + r_histr[0]
-                    print b_histr[0] , g_histr[0] , r_histr[0] ,total
-                    pnb = (float(b_histr[0]) / float(total))
-                    png = (float(g_histr[0]) / float(total))
-                    pnr = (float(r_histr[0]) / float(total))
-                    
+                    total = (b_cdf.max() - b_histr[0]) + (g_cdf.max() - g_histr[0]) + (r_cdf.max() - r_histr[0])
+                    Pb = (float(b_cdf.max() - b_histr[0]) / float(total))
+                    Pg = (float(g_cdf.max() - g_histr[0]) / float(total))
+                    Pr = (float(r_cdf.max() - r_histr[0]) / float(total))
+                    #print "Pb{}Pg{}Pr{}".format(Pb, Pg, Pr)
 #                    hist,bins = np.histogram(img_roi.flatten(), 256,[0,256])
 #                    cdf = hist.cumsum()
 #                    cdf_normalized = cdf * hist.max()/ cdf.max()
@@ -207,7 +206,7 @@ def threshold_callback(params):
 
 
 #                    return (int(box[1][0]+i[0]), int(box[1][1]+i[1]), i[2], b_histr.max(), #g_histr.max(), r_histr.max())
-                    return (int(box[1][0]+i[0]), int(box[1][1]+i[1]), int(i[2]), pnb, png, pnr)
+                    return (int(box[1][0]+i[0]), int(box[1][1]+i[1]), int(i[2]), Pb, Pg, Pr)
 
 #        cv2.drawContours(drawing, [box], 0, (255,255,255), cv2.FILLED) 
 
@@ -236,24 +235,24 @@ def callback(msg):
 def main():
     global client, img, img_gray, thresh, img_gamma
 
-    pub = rospy.Publisher('buoy_locator', String, queue_size=10)
+    pub = rospy.Publisher('buoy_locator', String, queue_size=100)
     rate = rospy.Rate(10) # 10Hz
     
-    cv2.namedWindow('Source', flags=cv2.WINDOW_NORMAL)
-    cv2.createTrackbar('Threshold: ', 'Source', thresh, 255, threshold_callback)
-    cv2.createTrackbar('Gamma: ', 'Source', gamma, 20, on_gamma_callback)
+#    cv2.namedWindow('Source', flags=cv2.WINDOW_NORMAL)
+#    cv2.createTrackbar('Threshold: ', 'Source', thresh, 255, threshold_callback)
+#    cv2.createTrackbar('Gamma: ', 'Source', gamma, 20, on_gamma_callback)
     
     while(img is None):
         rate.sleep() #rospy.sleep(0.01)
     
     while not rospy.is_shutdown():
        
-        cv2.imshow('Source', img)
+#        cv2.imshow('Source', img)
 #        cv2.imshow('Gray Blur', img_gray)
   	
         res = threshold_callback(thresh) 
         if res != None:
-            buoy = "window={6}x{7},origin_x={0},origin_y={1},r={2},pnb={3},png={4},pnr={5}".format(res[0], res[1], res[2], res[3], res[4], res[5], img_gray.shape[1], img_gray.shape[0])
+            buoy = "window_x={6},window_y={7},origin_x={0},origin_y={1},radius={2},prob_blue={3},prob_green={4},prob_red={5}".format(res[0], res[1], res[2], res[3], res[4], res[5], img_gray.shape[1], img_gray.shape[0])
             rospy.loginfo(buoy)
             pub.publish(buoy)
         
