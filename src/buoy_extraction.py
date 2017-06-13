@@ -56,7 +56,7 @@ def threshold_callback(params):
     		cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
 #    thresh_out = cv2.adaptiveThreshold(img_gray, 255, \
 #		cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY,11,2)
-    cv2.imshow('thresh out', thresh_out)
+#    cv2.imshow('thresh out', thresh_out)
 
 # noise removal
     kernel = np.ones((3,3),np.uint8)
@@ -128,11 +128,11 @@ def threshold_callback(params):
             # create a CLAHE object (Arguments are optional).
             clahe = cv2.createCLAHE(clipLimit=1.0, tileGridSize=(3,3))
             cl1 = clahe.apply(img_roi)
-            res = np.hstack((img_roi, cl1))
+#            res = np.hstack((img_roi, cl1))
             
 #            equ = cv2.equalizeHist(img_roi)
 #            res = np.hstack((img_roi, img_roi))
-            cv2.imshow('equ', res)
+#            cv2.imshow('equ', res)
 #            lower_blue = np.array([110,50,50])
 #            upper_blue = np.array([130,255,255])
 #            mask = cv2.inRange(img_roi, lower_blue, upper_blue)
@@ -153,38 +153,48 @@ def threshold_callback(params):
                  
                     # create a water index pixel mask
                     w = img_rgb_roi[0,0]
-                    print w
+#                    print w
                     b,g,r =cv2.split(img_rgb_roi)
                     mask = np.zeros(img_rgb_roi.shape[:2], np.uint8)
 
                     mask[:, :] = w[0]  
                     #mask_inv = cv2.bitwise_not(mask)  
-                    cv2.imshow('b_mask_inv',mask)                
+#                    cv2.imshow('b_mask',mask)                
                     b_masked_img = cv2.subtract(b, mask)
                     cv2.imshow('b_masked_img', b_masked_img)
                     b_histr,bins = np.histogram(b_masked_img.ravel(), 256,[0,256])
-
+#                    b_cdf = b_histr.cumsum()
+#                    b_cdf_normalized = b_cdf * b_histr.max()/ b_cdf.max()
+                   
                     mask[:, :] = w[1]
                     #mask_inv = cv2.bitwise_not(mask)
-                    cv2.imshow('g_mask_inv',mask)                
+                    #cv2.imshow('g_mask',mask)                
                     g_masked_img = cv2.subtract(g, mask)
                     cv2.imshow('g_masked_img', g_masked_img)
                     g_histr,bins = np.histogram(g_masked_img.ravel(), 256,[0,256])
-
+#                    g_cdf = g_histr.cumsum()
+#                    g_cdf_normalized = g_cdf * g_histr.max()/ g_cdf.max()
+                    
                     mask[:, :] = w[2]               
                     #mask_inv = cv2.bitwise_not(mask)
-                    cv2.imshow('r_mask_inv',mask)                     
+                    #cv2.imshow('r_mask',mask)                     
                     r_masked_img = cv2.subtract(r, mask)
                     cv2.imshow('r_masked_img', r_masked_img)
                     r_histr,bins = np.histogram(r_masked_img.ravel(), 256,[0,256])
+#                    r_cdf = r_histr.cumsum()
+#                    r_cdf_normalized = r_cdf * r_histr.max()/ r_cdf.max()
                     
                     m_img = cv2.merge((b_masked_img,g_masked_img,r_masked_img))
                     cv2.imshow('m_img', m_img)
 #                    b_histr = cv2.calcHist([img_rgb_roi],[0],None,[256],[0,256])                   
 #                    g_histr = cv2.calcHist([img_rgb_roi],[1],None,[256],[0,256])                   
 #                    r_histr = cv2.calcHist([img_rgb_roi],[2],None,[256],[0,256])                   
-
-
+                    total = b_histr[0] + g_histr[0] + r_histr[0]
+                    print b_histr[0] , g_histr[0] , r_histr[0] ,total
+                    pnb = (float(b_histr[0]) / float(total))
+                    png = (float(g_histr[0]) / float(total))
+                    pnr = (float(r_histr[0]) / float(total))
+                    
 #                    hist,bins = np.histogram(img_roi.flatten(), 256,[0,256])
 #                    cdf = hist.cumsum()
 #                    cdf_normalized = cdf * hist.max()/ cdf.max()
@@ -193,7 +203,11 @@ def threshold_callback(params):
 #                    plt.xlim([0,256])
 #                    plt.legend(('cdf','histogram'), loc = 'upper left')
 #                    plt.show()
-                    return (int(box[1][0]+i[0]), int(box[1][1]+i[1]), i[2], b_histr, g_histr, r_histr)
+
+
+
+#                    return (int(box[1][0]+i[0]), int(box[1][1]+i[1]), i[2], b_histr.max(), #g_histr.max(), r_histr.max())
+                    return (int(box[1][0]+i[0]), int(box[1][1]+i[1]), int(i[2]), pnb, png, pnr)
 
 #        cv2.drawContours(drawing, [box], 0, (255,255,255), cv2.FILLED) 
 
@@ -239,7 +253,7 @@ def main():
   	
         res = threshold_callback(thresh) 
         if res != None:
-            buoy = "x={},y={},r={},lb={},lg={},lr={}".format(res[0], res[1], res[2], res[3], res[4], res[5])
+            buoy = "window={6}x{7},origin_x={0},origin_y={1},r={2},pnb={3},png={4},pnr={5}".format(res[0], res[1], res[2], res[3], res[4], res[5], img_gray.shape[1], img_gray.shape[0])
             rospy.loginfo(buoy)
             pub.publish(buoy)
         
