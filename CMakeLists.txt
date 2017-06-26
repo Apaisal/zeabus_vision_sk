@@ -50,13 +50,16 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
    FILES
    buoy.msg
+   vision_msg_buoy.msg
 #   vision_msg.msg
 )
 
 ## Generate services in the 'srv' folder
 add_service_files(
    FILES
-   getbuoy.srv
+   getbuoyposition.srv
+   getbuoycolor.srv
+   vision_srv_buoy.srv
 #   vision_srv.srv
 )
 
@@ -73,7 +76,7 @@ generate_messages(
    std_msgs  # Or other packages containing msgs
 #   geometry_msgs
 #   sensor_msgs
-#   zeabus_vision_sk
+   zeabus_vision_sk
 )
 ###################################
 ## catkin specific configuration ##

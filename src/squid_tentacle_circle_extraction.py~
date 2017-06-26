@@ -244,7 +244,7 @@ def callback(msg):
         arr = np.fromstring(msg.data, np.uint8)
         img = cv2.imdecode(arr, 1)
         img_resize = cv2.resize(img, (320, 256))
-
+        cv2.imshow('Source', img_resize)
 #        img_gamma = adjust_gamma(img_resize, gamma)
 #        img_gray = cv2.cvtColor(img_gamma, cv2.COLOR_BGR2GRAY)
 #        hsv = cv2.cvtColor(img_gamma, cv2.COLOR_BGR2HSV)       
@@ -287,7 +287,7 @@ def main():
     while not rospy.is_shutdown():
 #        if img_gray == None:
 #           cv2.destroyAllWindows()
-        cv2.imshow('Source', img_resize)
+
 #        cv2.imshow('Source', img)       	
 #        process() 
 

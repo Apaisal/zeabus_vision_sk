@@ -1,6 +1,0 @@
-bool get_buoy
----
-bool is_likely_buoy
-bool likely_red
-bool likely_yellow
-bool likely_green
