@@ -39,7 +39,8 @@ upper_g = 255
 upper_b = 255
 gamma = 7
 #bridge = CvBridge()
-
+pub = rospy.Publisher('octopus_locator', String, queue_size=10)
+    
 def on_gamma_callback(param):
    global gamma
    gamma = param
@@ -177,7 +178,7 @@ def process():
     hsv_drawing = hsv.copy()
 #   for i in range(len(contours)):
 #	hull.append(cv2.convexHull(contours[i]))
-
+    ret = []
     for i in range(len(contours)):
         minRect.append(cv2.minAreaRect(contours[i]))
 #        if len(contours[i]) < 5:
@@ -221,9 +222,16 @@ def process():
 #                    cv2.circle(hsv,(i[0],i[1]),2,(0,0,255),3)
                     cv2.circle(hsv_drawing,(int(box[1][0]+i[0]),int(box[1][1]+i[1])),2,(0,0,255),3)
                     cv2.imshow('circle', hsv_drawing)
-                    return (int(box[1][0]+i[0]), int(box[1][1]+i[1]), int(i[2]))
+                    #return (int(box[1][0]+i[0]), int(box[1][1]+i[1]), int(i[2]))
 #                    cv2.imshow('circle', hsv)
 #                    cv2.imshow('ROI', img_roi)
+                    ret.append({"width":img_gray.shape[1], "height":img_gray.shape[0], "origin_x":int(box[1][0]+i[0]), \
+                        "origin_y":int(box[1][1]+i[1]), "radius":int(i[2])})
+                    #buoy = "window_x={7},window_y={8},origin_x={0},origin_y={1},radius={2},prob_blue={3},prob_green={4},prob_red={5},color={6}" \
+                       #             .format(ret[i][0], ret[i][1], ret[i][2], ret[i][3], ret[i][4], ret[i][5], ret[i][6],  img_gray.shape[1], img_gray.shape[0])
+    print("Count all: {}".format(len(ret)))
+    rospy.loginfo(ret)
+    return ret
 
 #        cv2.drawContours(drawing, [box], 0, (255,255,255), cv2.FILLED) 
 
@@ -276,8 +284,7 @@ def getchar():
    return ch
            
 def main():
-    global client, img, img_gray, thresh,  hsv
-    pub = rospy.Publisher('octopus_locator', String, queue_size=10)
+    global client, img, img_gray, thresh,  hsv,  pub
     rate = rospy.Rate(10) # 10Hz
     
     cv2.namedWindow('Source', flags=cv2.WINDOW_NORMAL)
@@ -321,9 +328,7 @@ def main():
         #else :
         res = process()
         if res != None:
-           buoy = "window_x={3},window_y={4},origin_x={0},origin_y={1},radius={2}".format(res[0], res[1], res[2], img_gray.shape[1], img_gray.shape[0])
-           rospy.loginfo(buoy)
-           pub.publish(buoy)
+           pub.publish(res)
  
         #old_frame = img_gamma.copy()
 #        if img_gray == None:
