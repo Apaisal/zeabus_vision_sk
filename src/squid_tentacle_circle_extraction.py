@@ -39,7 +39,8 @@ upper_g = 255
 upper_b = 255
 gamma = 7
 bridge = CvBridge()
-
+pub = rospy.Publisher('octopus_locator', String, queue_size=10)
+    
 def adjust_gamma(image, gamma=1):
 # build a lookup table mapping the pixel values [0, 255] to
 # their adjusted gamma values
@@ -262,8 +263,7 @@ def getchar():
    return ch
            
 def main():
-    global client, img, img_gray, thresh
-    pub = rospy.Publisher('octopus_locator', String, queue_size=10)
+    global client, img, img_gray, thresh,  pub
     rate = rospy.Rate(10) # 10Hz
     
 #    cv2.namedWindow('Source', flags=cv2.WINDOW_NORMAL)
@@ -290,7 +290,10 @@ def main():
         cv2.imshow('Source', img_resize)
 #        cv2.imshow('Source', img)       	
 #        process() 
-
+        res = process()
+        if res != None:
+           pub.publish(res)
+ 
         key = cv2.waitKey(1) & 0xff
         if key == ord('q'):
             break

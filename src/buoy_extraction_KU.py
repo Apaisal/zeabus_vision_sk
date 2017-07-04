@@ -26,6 +26,7 @@ wait = False
 thresh = 184
 gamma = 30
 color = None
+pub = rospy.Publisher('buoy_locator', String, queue_size=100)
 
 def on_gamma_callback(param):
    global gamma
@@ -113,7 +114,7 @@ def threshold_callback(params):
     print(len(contours))
 #    for i in range(len(contours)):
 #	hull.append(cv2.convexHull(contours[i]))
-    
+    ret = []
     for i in range(len(contours)):
         minRect.append(cv2.minAreaRect(contours[i]))
         x,y,w,h = cv2.boundingRect(contours[i])
@@ -127,11 +128,12 @@ def threshold_callback(params):
         cv2.drawContours(drawing, contours, i, (0, 255, 0), 1) 
         #cv2.drawContours(drawing, contours, -1, (255,255,255), cv2.FILLED) 
         cv2.imshow('Contour', drawing)
+    
     for i in range(len(contours)):
 #	if contours[i].size > 100:
 #        cv2.drawContours(drawing, contours, i, (0,255,0), 1) 
 #        cv2.drawContours(drawing, hull, i, (0,255,0), 0) 
-	
+        
         box = cv2.boxPoints(minRect[i])
         box = np.int0(box)
         if box[1][1] < box[3][1] and box[0][0] < box[2][0]:
@@ -235,7 +237,16 @@ def threshold_callback(params):
 
 
 #                    return (int(box[1][0]+i[0]), int(box[1][1]+i[1]), i[2], b_histr.max(), #g_histr.max(), r_histr.max())
-                    return (int(box[1][0]+i[0]), int(box[1][1]+i[1]), int(i[2]), Pb, Pg, Pr,  color)
+                    #return (int(box[1][0]+i[0]), int(box[1][1]+i[1]), int(i[2]), Pb, Pg, Pr,  color)
+                    #ret.append((img_gray.shape[1], img_gray.shape[0], int(box[1][0]+i[0]), int(box[1][1]+i[1]), int(i[2]), Pb, Pg, Pr,  color))
+                    ret.append({"width":img_gray.shape[1], "height":img_gray.shape[0], "origin_x":int(box[1][0]+i[0]), \
+                    "origin_y":int(box[1][1]+i[1]), "radius":int(i[2]), "prob_blue":Pb, "prob_green":Pg, "prob_red":Pr,  "color":color})
+                    #buoy = "window_x={7},window_y={8},origin_x={0},origin_y={1},radius={2},prob_blue={3},prob_green={4},prob_red={5},color={6}" \
+                    #               .format(ret[i][0], ret[i][1], ret[i][2], ret[i][3], ret[i][4], ret[i][5], ret[i][6],  img_gray.shape[1], img_gray.shape[0])
+                    #rospy.loginfo(buoy)
+    print("Count all: {}".format(len(ret)))
+    rospy.loginfo(ret)
+    return ret
 
 #        cv2.drawContours(drawing, [box], 0, (255,255,255), cv2.FILLED) 
 
@@ -258,9 +269,8 @@ def callback(msg):
         img = cv2.imdecode(arr, 1)
 
 def main():
-    global client, img, img_gray, thresh, img_gamma,  hsv,  img_resize,  old_frame
+    global client, img, img_gray, thresh, img_gamma,  hsv,  img_resize,  old_frame,  pub
 
-    pub = rospy.Publisher('buoy_locator', String, queue_size=100)
     rate = rospy.Rate(10) # 10Hz
     
     cv2.namedWindow('Source', flags=cv2.WINDOW_NORMAL)
@@ -298,9 +308,7 @@ def main():
         else :
             res = threshold_callback(thresh) 
             if res != None:
-               buoy = "window_x={7},window_y={8},origin_x={0},origin_y={1},radius={2},prob_blue={3},prob_green={4},prob_red={5},color={6}".format(res[0], res[1], res[2], res[3], res[4], res[5], res[6],  img_gray.shape[1], img_gray.shape[0])
-               rospy.loginfo(buoy)
-               pub.publish(buoy)
+               pub.publish(res)
  
         old_frame = img_gamma.copy()
         key = cv2.waitKey(1) & 0xff

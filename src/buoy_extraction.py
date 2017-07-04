@@ -23,6 +23,7 @@ client = None
 wait = False
 thresh = 100
 gamma = 7
+pub = rospy.Publisher('buoy_locator', String, queue_size=100)
 
 def on_gamma_callback(param):
    global gamma
@@ -102,6 +103,7 @@ def threshold_callback(params):
 #    for i in range(len(contours)):
 #	hull.append(cv2.convexHull(contours[i]))
     hsv_drawing = hsv.copy()
+    ret = []
     for i in range(len(contours)):
         minRect.append(cv2.minAreaRect(contours[i]))
 #        if len(contours[i]) < 5:
@@ -221,7 +223,14 @@ def threshold_callback(params):
 
 
 #                    return (int(box[1][0]+i[0]), int(box[1][1]+i[1]), i[2], b_histr.max(), #g_histr.max(), r_histr.max())
-                    return (int(box[1][0]+i[0]), int(box[1][1]+i[1]), int(i[2]), Pb, Pg, Pr, color)
+                    #return (int(box[1][0]+i[0]), int(box[1][1]+i[1]), int(i[2]), Pb, Pg, Pr, color)
+                    ret.append({"width":img_gray.shape[1], "height":img_gray.shape[0], "origin_x":int(box[1][0]+i[0]), \
+                        "origin_y":int(box[1][1]+i[1]), "radius":int(i[2]), "prob_blue":Pb, "prob_green":Pg, "prob_red":Pr,  "color":color})
+                    #buoy = "window_x={7},window_y={8},origin_x={0},origin_y={1},radius={2},prob_blue={3},prob_green={4},prob_red={5},color={6}" \
+                       #             .format(ret[i][0], ret[i][1], ret[i][2], ret[i][3], ret[i][4], ret[i][5], ret[i][6],  img_gray.shape[1], img_gray.shape[0])
+    print("Count all: {}".format(len(ret)))
+    rospy.loginfo(ret)
+    return ret
 
 #        cv2.drawContours(drawing, [box], 0, (255,255,255), cv2.FILLED) 
 
@@ -248,9 +257,7 @@ def callback(msg):
         hsv = cv2.cvtColor(img_gamma, cv2.COLOR_BGR2HSV)
 
 def main():
-    global client, img, img_gray, thresh, img_gamma
-
-    pub = rospy.Publisher('buoy_locator', String, queue_size=100)
+    global client, img, img_gray, thresh, img_gamma,  pub
     rate = rospy.Rate(10) # 10Hz
     
 #    cv2.namedWindow('Source', flags=cv2.WINDOW_NORMAL)
@@ -267,9 +274,7 @@ def main():
   	
         res = threshold_callback(thresh) 
         if res != None:
-            buoy = "window_x={7},window_y={8},origin_x={0},origin_y={1},radius={2},prob_blue={3},prob_green={4},prob_red={5},color={6}".format(res[0], res[1], res[2], res[3], res[4], res[5], res[6], img_gray.shape[1], img_gray.shape[0])
-            rospy.loginfo(buoy)
-            pub.publish(buoy)
+            pub.publish(res)
         
         key = cv2.waitKey(1) & 0xff
         if key == ord('q'):
