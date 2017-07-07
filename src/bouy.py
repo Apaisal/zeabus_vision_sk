@@ -10,12 +10,12 @@ import numpy as np
 import rospy
 from sensor_msgs.msg import CompressedImage
 import math
-sys.path.append(
-    '/home/zeabus/catkin_ws/src/src_code/zeabus_vision/zeabus_vision_main/src/')
+#sys.path.append(
+#    '/home/zeabus/catkin_ws/src/src_code/zeabus_vision/zeabus_vision_main/src/')
 from vision_lib import *
 from std_msgs.msg import String
-from zeabus_vision_srv_msg.msg import vision_msg_bouy
-from zeabus_vision_srv_msg.srv import vision_srv_bouy
+#from zeabus_vision_srv_msg.msg import vision_msg_bouy
+#from zeabus_vision_srv_msg.srv import vision_srv_bouy
 img = None
 img_gamma = None
 img_gray = None
@@ -182,9 +182,7 @@ def threshold_callback(params):
                     total = (
                         b_cdf.max() - b_histr[0]) + (g_cdf.max() - g_histr[0]) + (r_cdf.max() - r_histr[0])
                     if total == 0:
-                        Py = 1.0
-                        Pg = 1.0
-                        Pr = 1.0
+                        Py = Pg = Pr = 1.0
                     else:
                         Py = (float(b_cdf.max() - b_histr[0]) / float(total))
                         Pg = (float(g_cdf.max() - g_histr[0]) / float(total))
@@ -196,12 +194,13 @@ def threshold_callback(params):
                         color = 'g'
                     elif Pr > Py and Pr > Pg:
                         color = 'r'
+                    else:
+                        color = 'x'
 
                     # ret.append({"width": img_gray.shape[1], "height": img_gray.shape[0], "origin_x": int(box[1][0] + i[0]),
                         # "origin_y": int(box[1][1] + i[1]), "radius": int(i[2]), "prob_blue": Py, "prob_green": Pg, "prob_red": Pr,  "color": color})
                     # color, prob(r,y,g), r, x, y
-                    ret.append([color, Pr, Py, Pg, int(i[2]), int(
-                        box[1][0] + i[0]), int(box[1][1] + i[1])])
+                    ret.append([color, Pr, Py, Pg, int(i[2]), int(box[1][0] + i[0]), int(box[1][1] + i[1])])
     print("Count all: {}".format(len(ret)))
     rospy.loginfo(ret)
     return ret
@@ -229,7 +228,7 @@ def find_bouy():
     # cv2.createTrackbar('Threshold: ', 'Source', thresh,
     #                    255, on_threshold_callback)
     # cv2.createTrackbar('Gamma: ', 'Source', gamma, 50, on_gamma_callback)
-    m = vision_msg_bouy()
+#    m = vision_msg_bouy()
     while img is None:
         print('img none')
         rospy.sleep(0.1)  # rospy.sleep(0.01)
@@ -254,8 +253,8 @@ def find_bouy():
     #     old_frame = img_gamma.copy()
     #     pass
     # else:
-    offset_c = width / 2.0
-    offset_r = height / 2.0
+    #offset_c = width / 2.0
+    #offset_r = height / 2.0
     result = threshold_callback(thresh)
     result_dict = {'r': [], 'g': [], 'y': [], 'a': []}
     if len(result) > 0:
@@ -355,7 +354,7 @@ if __name__ == '__main__':
     rospy.init_node('buoy', anonymous=True)
     topic = "/top/center/image_rect_color/compressed"
     rospy.Subscriber(topic, CompressedImage, callback)
-    rospy.Service('vision_bouy', vision_srv_bouy, mission_callback)
+    #rospy.Service('vision_bouy', vision_srv_bouy, mission_callback)
     #rospy.spin()
     while not rospy.is_shutdown():
         find_bouy()
