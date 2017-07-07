@@ -103,7 +103,7 @@ def threshold_callback(params):
 #    im2, contours, hierarchy = cv2.findContours(unknown, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 #    im2, contours, hierarchy = cv2.findContours(unknown, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
    # im2, contours, hierarchy = cv2.findContours(img_gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    im2, contours, hierarchy = cv2.findContours(unknown, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    im2, contours, hierarchy = cv2.findContours(unknown, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 #    hull = [] 
     minRect = []
 #    minEllipse = []
@@ -140,13 +140,16 @@ def threshold_callback(params):
             img_roi = hsv[int(box[1][1]):int(box[3][1]), int(box[0][0]):int(box[2][0])]
             
             img_rgb_roi = cv2.cvtColor(img_roi, cv2.COLOR_HSV2BGR)
-            
+            (l , u, v)= cv2.split(cv2.cvtColor(img_rgb_roi, cv2.COLOR_BGR2Luv))
             img_roi = cv2.cvtColor(img_roi, cv2.COLOR_BGR2GRAY)
+            
             cv2.imshow('ROI', img_roi)
             # create a CLAHE object (Arguments are optional).
             clahe = cv2.createCLAHE(clipLimit=1.0, tileGridSize=(3,3))
-            cl1 = clahe.apply(img_roi)
-            res = np.hstack((img_roi, cl1))
+            cl1 = clahe.apply(v)
+            re,  clt = cv2.threshold(cl1, cl1.max()*0.7, 255, cv2.THRESH_BINARY)
+            clt = cv2.bitwise_and(cl1,clt)
+            res = np.hstack((img_roi, cl1,clt,   l,  u, v))
             
             #equ = cv2.equalizeHist(img_roi)
             #res = np.hstack((img_roi, img_roi))
@@ -156,7 +159,10 @@ def threshold_callback(params):
 #            mask = cv2.inRange(img_roi, lower_blue, upper_blue)
 #            res = cv2.bitwise_and(img_roi,img_roi, mask= mask)
   #          circles = cv2.HoughCircles(cl1, cv2.HOUGH_GRADIENT, 1, 1, param1=80, param2=20, minRadius=0, maxRadius=0)
-            circles = cv2.HoughCircles(img_roi, cv2.HOUGH_GRADIENT, 1.3, 100, param1=80, param2=20, minRadius=0, maxRadius=0)
+#            circles = cv2.HoughCircles(img_roi, cv2.HOUGH_GRADIENT, \
+            circles = cv2.HoughCircles(cl1, cv2.HOUGH_GRADIENT, \
+                1.3, 100, param1=80, param2=20, \
+                minRadius=3, maxRadius=50)
             if circles != None:
                 for i in circles[0,:]:
             # draw the outer circle
@@ -171,7 +177,7 @@ def threshold_callback(params):
                  
                     # create a water index pixel mask
                     w = img_rgb_roi[0,0]
-#                    print w
+#                    print wq
                     b,g,r =cv2.split(img_rgb_roi)
                     mask = np.zeros(img_rgb_roi.shape[:2], np.uint8)
 
@@ -209,9 +215,7 @@ def threshold_callback(params):
 #                    r_histr = cv2.calcHist([img_rgb_roi],[2],None,[256],[0,256])                   
                     total = (b_cdf.max() - b_histr[0]) + (g_cdf.max() - g_histr[0]) + (r_cdf.max() - r_histr[0])
                     if total == 0:
-                        Pb = 1.0
-                        Pg = 1.0
-                        Pr = 1.0
+                        Pb = Pg = Pr = 1.0
                     else   :
                         Pb = (float(b_cdf.max() - b_histr[0]) / float(total))
                         Pg = (float(g_cdf.max() - g_histr[0]) / float(total))
@@ -223,6 +227,8 @@ def threshold_callback(params):
                         color = 'g'
                     elif Pr > Pb and Pr > Pg:
                         color = 'r'
+                    else:
+                        color = 'x'
                         
                     #print "Pb{}Pg{}Pr{}".format(Pb, Pg, Pr)
 #                    hist,bins = np.histogram(img_roi.flatten(), 256,[0,256])
@@ -286,22 +292,43 @@ def main():
         hsv = cv2.cvtColor(img_gamma, cv2.COLOR_BGR2HSV)
         img_gray = cv2.cvtColor(img_gamma, cv2.COLOR_BGR2GRAY)
         cv2.imshow('Source', img_gamma)
-    
+        l, a,  b = cv2.split(cv2.cvtColor(img_gamma, cv2.COLOR_BGR2Lab))
+        lab = np.hstack((  l,  a, b))
+        cv2.imshow('Source lab', lab)
+        l, u,  v = cv2.split(cv2.cvtColor(img_gamma, cv2.COLOR_BGR2Luv))
+        ret, maskv = cv2.threshold(v, v.max() * 0.8, 255, cv2.THRESH_BINARY)
+        val = cv2.bitwise_and(v,v,mask = maskv)
+        #cv2.imshow('Source luv', val)
+        x, y, z= cv2.split(cv2.cvtColor(img_gamma, cv2.COLOR_BGR2XYZ))
+        #xyz = np.hstack((  x, y, z))
+        #cv2.imshow('Source xyz', xyz)
         
         #cv2.imshow('hsv', hsv)
         h, s, v = cv2.split(hsv)
+        cv2.imshow('Source hsv', np.hstack(( h, s, v)))
+        
+        zh =  cv2.add(cv2.bitwise_not(z), h)
+        cv2.imshow('Source zh', zh)
+        ret, maskzh = cv2.threshold(zh, zh.max() * 0.7, 255, cv2.THRESH_BINARY)
+        #cv2.imshow('mask_zh', maskzh)
+        zh = cv2.bitwise_and(zh,zh,mask = maskzh)
+        cv2.imshow('zh', zh )
+        
         h_inv = cv2.bitwise_not(h)
         ret, mask1 = cv2.threshold(h_inv, 162, 255, cv2.THRESH_BINARY_INV)
         mask1_inv = cv2.bitwise_not(mask1)
-        #cv2.imshow('mask_inv', mask1_inv)
-        ret, mask2 = cv2.threshold(h_inv, 150, 255, cv2.THRESH_BINARY)
-        mask2_inv = cv2.bitwise_not(mask2)
+        cv2.imshow('mask_inv', mask1_inv)
+        #ret, mask2 = cv2.threshold(h_inv, 150, 255, cv2.THRESH_BINARY)
+        #mask2_inv = cv2.bitwise_not(mask2)
         #cv2.imshow('mask2_inv', mask2_inv)
-        mask  = cv2.bitwise_or(mask1_inv,  mask2_inv)
+        #mask  = cv2.bitwise_and(mask1_inv,  mask2_inv)
         #cv2.imshow('mask', mask)
-        img_gray = cv2.bitwise_and(img_gray,img_gray,mask = mask)
-        #cv2.imshow('Gray', img_gray )
-  	
+        img_gray = cv2.bitwise_and(img_gray,img_gray,mask = mask1_inv)
+        img_gray = cv2.add(img_gray,zh)
+        ret, img_gray = cv2.threshold(img_gray, 230, 255, cv2.THRESH_TOZERO)
+        cv2.imshow('Gray', img_gray )
+      
+        
         if old_frame == None:
             old_frame = img_gamma.copy()
             pass
